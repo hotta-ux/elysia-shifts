@@ -5,8 +5,12 @@ let initialized = false;
 
 function getClient(): Client {
   if (!client) {
+    const url = process.env.TURSO_DATABASE_URL;
+    if (!url) {
+      throw new Error('TURSO_DATABASE_URL is not set');
+    }
     client = createClient({
-      url: process.env.TURSO_DATABASE_URL || 'file:shift-manager.db',
+      url,
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
   }
