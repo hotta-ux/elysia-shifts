@@ -7,7 +7,7 @@ type ShiftEntry = {
   id: number;
   staff_id: number;
   date: string;
-  shift_type: "early" | "mid" | "late";
+  shift_type: "slot1" | "slot2" | "slot3" | "slot4" | "slot5";
   staff_name: string;
   experience_level: string;
   is_owner: number;
@@ -15,9 +15,11 @@ type ShiftEntry = {
 };
 
 const SHIFT_TYPES = [
-  { key: "early", label: "早番", time: "8:00-13:00" },
-  { key: "mid", label: "中番", time: "13:00-18:00" },
-  { key: "late", label: "遅番", time: "18:00-23:00" },
+  { key: "slot1", label: "\u2460", time: "8:00-11:00" },
+  { key: "slot2", label: "\u2461", time: "11:00-14:00" },
+  { key: "slot3", label: "\u2462", time: "14:00-17:00" },
+  { key: "slot4", label: "\u2463", time: "17:00-20:00" },
+  { key: "slot5", label: "\u2464", time: "20:00-23:00" },
 ];
 
 function getDaysInMonth(year: number, month: number) {
@@ -100,17 +102,17 @@ export default function SchedulePage() {
   };
 
   const exportCsv = () => {
-    const header = ["日付", "曜日", "早番(8-13)", "中番(13-18)", "遅番(18-23)"];
+    const header = ["日付", "曜日", "\u2460(8-11)", "\u2461(11-14)", "\u2462(14-17)", "\u2463(17-20)", "\u2464(20-23)"];
     const rows = days.map((date) => {
       const dow = getDayOfWeek(date);
       const d = parseInt(date.split("-")[2]);
       const isTuesday = new Date(date).getDay() === 2;
-      if (isTuesday) return [`${d}`, dow, "定休日", "定休日", "定休日"];
+      if (isTuesday) return [`${d}`, dow, "定休日", "定休日", "定休日", "定休日", "定休日"];
       const getStaff = (type: string) =>
         shifts.filter((s) => s.date === date && s.shift_type === type)
           .map((s) => `${s.staff_name}${s.is_owner ? "(Owner)" : ""}`)
           .join(" / ") || "-";
-      return [`${d}`, dow, getStaff("early"), getStaff("mid"), getStaff("late")];
+      return [`${d}`, dow, getStaff("slot1"), getStaff("slot2"), getStaff("slot3"), getStaff("slot4"), getStaff("slot5")];
     });
 
     const bom = "\uFEFF";
@@ -254,7 +256,7 @@ export default function SchedulePage() {
                   return (
                     <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: "#f7f7f5" }}>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-300">{d}({dow})</td>
-                      <td colSpan={3} className="px-3 py-2 text-center text-xs text-gray-300 tracking-wide">定休日</td>
+                      <td colSpan={5} className="px-3 py-2 text-center text-xs text-gray-300 tracking-wide">定休日</td>
                     </tr>
                   );
                 }
@@ -313,10 +315,10 @@ export default function SchedulePage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(() => {
-              const counts = new Map<string, { total: number; early: number; mid: number; late: number; isOwner: boolean }>();
+              const counts = new Map<string, { total: number; slot1: number; slot2: number; slot3: number; slot4: number; slot5: number; isOwner: boolean }>();
               shifts.forEach((s) => {
                 const key = s.staff_name;
-                const c = counts.get(key) || { total: 0, early: 0, mid: 0, late: 0, isOwner: !!s.is_owner };
+                const c = counts.get(key) || { total: 0, slot1: 0, slot2: 0, slot3: 0, slot4: 0, slot5: 0, isOwner: !!s.is_owner };
                 c.total++;
                 c[s.shift_type]++;
                 counts.set(key, c);
@@ -334,7 +336,7 @@ export default function SchedulePage() {
                     {c.total}<span className="text-xs text-gray-400 font-normal ml-1">回</span>
                   </div>
                   <div className="text-[10px] text-gray-400 mt-0.5 tracking-wide">
-                    早{c.early} / 中{c.mid} / 遅{c.late}
+                    {"\u2460"}{c.slot1} / {"\u2461"}{c.slot2} / {"\u2462"}{c.slot3} / {"\u2463"}{c.slot4} / {"\u2464"}{c.slot5}
                   </div>
                 </div>
               ));

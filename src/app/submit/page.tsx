@@ -8,9 +8,11 @@ type Staff = {
 };
 
 const SHIFT_TYPES = [
-  { key: "early", label: "早番", time: "8:00-13:00" },
-  { key: "mid", label: "中番", time: "13:00-18:00" },
-  { key: "late", label: "遅番", time: "18:00-23:00" },
+  { key: "slot1", label: "\u2460", time: "8:00-11:00" },
+  { key: "slot2", label: "\u2461", time: "11:00-14:00" },
+  { key: "slot3", label: "\u2462", time: "14:00-17:00" },
+  { key: "slot4", label: "\u2463", time: "17:00-20:00" },
+  { key: "slot5", label: "\u2464", time: "20:00-23:00" },
 ];
 
 function getDaysInMonth(year: number, month: number) {
@@ -201,7 +203,7 @@ export default function SubmitPage() {
                 return (
                   <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: "#f7f7f5" }}>
                     <td className="px-3 py-1.5 text-xs text-gray-300">{parseInt(date.split("-")[2])}({dow})</td>
-                    <td colSpan={3} className="px-2 py-1.5 text-center text-xs text-gray-300">定休日</td>
+                    <td colSpan={5} className="px-2 py-1.5 text-center text-xs text-gray-300">定休日</td>
                   </tr>
                 );
               }

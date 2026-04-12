@@ -18,9 +18,11 @@ type ShiftRequest = {
 };
 
 const SHIFT_TYPES = [
-  { key: "early", label: "早番" },
-  { key: "mid", label: "中番" },
-  { key: "late", label: "遅番" },
+  { key: "slot1", label: "\u2460" },
+  { key: "slot2", label: "\u2461" },
+  { key: "slot3", label: "\u2462" },
+  { key: "slot4", label: "\u2463" },
+  { key: "slot5", label: "\u2464" },
 ];
 
 function getDaysInMonth(year: number, month: number) {
@@ -125,7 +127,7 @@ export default function RequestsPage() {
       const [staffName, date, shiftType, availability] = parts;
       const staff = staffList.find(s => s.name === staffName);
       if (!staff) continue;
-      const validShifts = ["early", "mid", "late"];
+      const validShifts = ["slot1", "slot2", "slot3", "slot4", "slot5"];
       const validAvail = ["available", "unavailable", "either"];
       if (!validShifts.includes(shiftType) || !validAvail.includes(availability)) continue;
       requestArray.push({ staff_id: staff.id, date, shift_type: shiftType, availability });
@@ -213,7 +215,7 @@ export default function RequestsPage() {
         <div className="bg-white rounded-lg border p-6 space-y-3" style={{ borderColor: "#e8dcc8" }}>
           <h3 className="text-sm font-semibold text-gray-700">CSV形式で一括取り込み</h3>
           <p className="text-xs text-gray-400">
-            形式: スタッフ名,日付,シフト種別(early/mid/late),希望(available/unavailable/either)
+            形式: スタッフ名,日付,シフト種別(slot1/slot2/slot3/slot4/slot5),希望(available/unavailable/either)
           </p>
           <textarea
             value={csvText}
@@ -221,7 +223,7 @@ export default function RequestsPage() {
             className="w-full border rounded-md px-3 py-2 font-mono text-xs focus:outline-none focus:ring-1"
             style={{ borderColor: "#e8dcc8" }}
             rows={6}
-            placeholder={`山田,${monthStr}-01,early,available\n山田,${monthStr}-01,mid,unavailable`}
+            placeholder={`山田,${monthStr}-01,slot1,available\n山田,${monthStr}-01,slot2,unavailable`}
           />
           <button
             onClick={handleCsvImport}
@@ -287,7 +289,7 @@ export default function RequestsPage() {
                     return (
                       <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: "#f7f7f5" }}>
                         <td className="px-2 py-1.5 text-xs text-gray-300">{parseInt(date.split("-")[2])}({dow})</td>
-                        <td colSpan={3} className="px-2 py-1.5 text-center text-xs text-gray-300">定休日</td>
+                        <td colSpan={5} className="px-2 py-1.5 text-center text-xs text-gray-300">定休日</td>
                       </tr>
                     );
                   }
@@ -343,7 +345,7 @@ export default function RequestsPage() {
                   return (
                     <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: "#f7f7f5" }}>
                       <td className="px-2 py-1 text-xs text-gray-300">{parseInt(date.split("-")[2])}({dow})</td>
-                      <td colSpan={3} className="px-2 py-1 text-center text-xs text-gray-300">定休日</td>
+                      <td colSpan={5} className="px-2 py-1 text-center text-xs text-gray-300">定休日</td>
                     </tr>
                   );
                 }

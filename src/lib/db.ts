@@ -59,7 +59,7 @@ async function initDb(db: Client) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       staff_id INTEGER NOT NULL,
       date TEXT NOT NULL,
-      shift_type TEXT NOT NULL CHECK(shift_type IN ('early', 'mid', 'late')),
+      shift_type TEXT NOT NULL,
       availability TEXT DEFAULT 'available' CHECK(availability IN ('available', 'unavailable', 'either')),
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE,
@@ -72,7 +72,7 @@ async function initDb(db: Client) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       staff_id INTEGER NOT NULL,
       date TEXT NOT NULL,
-      shift_type TEXT NOT NULL CHECK(shift_type IN ('early', 'mid', 'late')),
+      shift_type TEXT NOT NULL,
       is_confirmed INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
@@ -149,7 +149,7 @@ export type ShiftRequest = {
   id: number;
   staff_id: number;
   date: string;
-  shift_type: 'early' | 'mid' | 'late';
+  shift_type: 'slot1' | 'slot2' | 'slot3' | 'slot4' | 'slot5';
   availability: 'available' | 'unavailable' | 'either';
   created_at: string;
 };
@@ -158,7 +158,7 @@ export type Shift = {
   id: number;
   staff_id: number;
   date: string;
-  shift_type: 'early' | 'mid' | 'late';
+  shift_type: 'slot1' | 'slot2' | 'slot3' | 'slot4' | 'slot5';
   is_confirmed: number;
   created_at: string;
 };
