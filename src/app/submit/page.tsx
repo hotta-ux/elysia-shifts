@@ -84,7 +84,7 @@ export default function SubmitPage() {
 
   const toggleAvailability = (date: string, shiftType: string) => {
     const key = `${date}-${shiftType}`;
-    const current = requests.get(key) || "available";
+    const current = requests.get(key) || "unavailable";
     const order = ["available", "either", "unavailable"];
     const nextIdx = (order.indexOf(current) + 1) % order.length;
     const newMap = new Map(requests);
@@ -214,7 +214,7 @@ export default function SubmitPage() {
                   </td>
                   {SHIFT_TYPES.map((st) => {
                     const key = `${date}-${st.key}`;
-                    const avail = requests.get(key) || "available";
+                    const avail = requests.get(key) || "unavailable";
                     return (
                       <td key={st.key} className="px-2 py-1.5 text-center">
                         <button
