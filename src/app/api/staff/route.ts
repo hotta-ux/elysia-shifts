@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
 export async function GET() {
-  const db = await getDb();
-  const result = await db.execute('SELECT * FROM staff ORDER BY is_owner DESC, name ASC');
-  return NextResponse.json(result.rows);
+  try {
+    const db = await getDb();
+    const result = await db.execute('SELECT * FROM staff ORDER BY is_owner DESC, name ASC');
+    return NextResponse.json(result.rows);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

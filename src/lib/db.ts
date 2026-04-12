@@ -16,7 +16,11 @@ function getClient(): Client {
 export async function getDb(): Promise<Client> {
   const db = getClient();
   if (!initialized) {
-    await initDb(db);
+    try {
+      await initDb(db);
+    } catch (e) {
+      console.error('DB init warning:', e);
+    }
     initialized = true;
   }
   return db;
