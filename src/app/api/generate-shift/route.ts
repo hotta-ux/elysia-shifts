@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, Staff, ShiftRequest } from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
 
+// Vercel: allow up to 60s for AI generation (default is 10s on Hobby plan)
+export const maxDuration = 60;
+
 const SHIFT_LABELS: Record<string, string> = {
   slot1: '\u2460(8:00-11:00)',
   slot2: '\u2461(11:00-14:00)',
