@@ -15,11 +15,11 @@ type ShiftEntry = {
 };
 
 const SHIFT_TYPES = [
-  { key: "slot1", label: "\u2460", time: "8:00-11:00" },
-  { key: "slot2", label: "\u2461", time: "11:00-14:00" },
-  { key: "slot3", label: "\u2462", time: "14:00-17:00" },
-  { key: "slot4", label: "\u2463", time: "17:00-20:00" },
-  { key: "slot5", label: "\u2464", time: "20:00-23:00" },
+  { key: "slot1", label: "①", time: "8:00-11:00" },
+  { key: "slot2", label: "②", time: "11:00-14:00" },
+  { key: "slot3", label: "③", time: "14:00-17:00" },
+  { key: "slot4", label: "④", time: "17:00-20:00" },
+  { key: "slot5", label: "⑤", time: "20:00-23:00" },
 ];
 
 function getDaysInMonth(year: number, month: number) {
@@ -32,8 +32,7 @@ function getDaysInMonth(year: number, month: number) {
 }
 
 function getDayOfWeek(dateStr: string) {
-  const days = ["日", "月", "火", "水", "木", "金", "土"];
-  return days[new Date(dateStr).getDay()];
+  return ["日", "月", "火", "水", "木", "金", "土"][new Date(dateStr).getDay()];
 }
 
 function isWeekend(dateStr: string) {
@@ -43,9 +42,8 @@ function isWeekend(dateStr: string) {
 
 export default function SchedulePage() {
   const now = new Date();
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const [year, setYear] = useState(nextMonth.getFullYear());
-  const [month, setMonth] = useState(nextMonth.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
   const [apiKey, setApiKey] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -57,8 +55,7 @@ export default function SchedulePage() {
 
   const fetchShifts = useCallback(async () => {
     const res = await fetch(`/api/shifts?month=${monthStr}`);
-    const data = await res.json();
-    setShifts(data);
+    setShifts(await res.json());
   }, [monthStr]);
 
   useEffect(() => { fetchShifts(); }, [fetchShifts]);
@@ -76,8 +73,7 @@ export default function SchedulePage() {
   const generateShift = async () => {
     if (!apiKey) { setError("Claude APIキーを入力してください"); return; }
     setGenerating(true);
-    setError("");
-    setNotes("");
+    setError(""); setNotes("");
     try {
       const res = await fetch("/api/generate-shift", {
         method: "POST",
@@ -85,7 +81,7 @@ export default function SchedulePage() {
         body: JSON.stringify({ month: monthStr, apiKey }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "エラーが発生しました"); }
+      if (!res.ok) setError(data.error || "エラーが発生しました");
       else { setNotes(data.notes || ""); await fetchShifts(); }
     } catch { setError("通信エラーが発生しました"); }
     finally { setGenerating(false); }
@@ -102,7 +98,7 @@ export default function SchedulePage() {
   };
 
   const exportCsv = () => {
-    const header = ["日付", "曜日", "\u2460(8-11)", "\u2461(11-14)", "\u2462(14-17)", "\u2463(17-20)", "\u2464(20-23)"];
+    const header = ["日付", "曜日", "①(8-11)", "②(11-14)", "③(14-17)", "④(17-20)", "⑤(20-23)"];
     const rows = days.map((date) => {
       const dow = getDayOfWeek(date);
       const d = parseInt(date.split("-")[2]);
@@ -114,8 +110,7 @@ export default function SchedulePage() {
           .join(" / ") || "-";
       return [`${d}`, dow, getStaff("slot1"), getStaff("slot2"), getStaff("slot3"), getStaff("slot4"), getStaff("slot5")];
     });
-
-    const bom = "\uFEFF";
+    const bom = "﻿";
     const csv = bom + [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -124,6 +119,14 @@ export default function SchedulePage() {
     a.download = `shift_${year}_${String(month).padStart(2, "0")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const changeMonth = (delta: number) => {
+    let m = month + delta;
+    let y = year;
+    if (m < 1) { m = 12; y--; }
+    if (m > 12) { m = 1; y++; }
+    setYear(y); setMonth(m);
   };
 
   const shiftsByDate = new Map<string, ShiftEntry[]>();
@@ -137,109 +140,77 @@ export default function SchedulePage() {
 
   return (
     <AdminGuard>
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-gray-800 tracking-wide">シフト表</h1>
-          <div className="w-8 h-px mt-2" style={{ background: "#d4af37" }} />
+          <h1 className="section-title">シフト表</h1>
+          <div className="section-line" />
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => { if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1); }}
-            className="w-8 h-8 flex items-center justify-center rounded-md border text-gray-400 hover:text-gray-700 transition-colors"
-            style={{ borderColor: "#e8dcc8" }}
-          >
-            ←
-          </button>
-          <span className="text-sm font-semibold text-gray-700 tracking-wide min-w-[100px] text-center">
-            {year}年{month}月
-          </span>
-          <button
-            onClick={() => { if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1); }}
-            className="w-8 h-8 flex items-center justify-center rounded-md border text-gray-400 hover:text-gray-700 transition-colors"
-            style={{ borderColor: "#e8dcc8" }}
-          >
-            →
-          </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => changeMonth(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-all" style={{ borderColor: "#e8dcc8" }}>‹</button>
+          <span className="text-sm font-semibold text-gray-700 tracking-wide min-w-[100px] text-center">{year}年{month}月</span>
+          <button onClick={() => changeMonth(1)} className="w-8 h-8 flex items-center justify-center rounded-full border text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-all" style={{ borderColor: "#e8dcc8" }}>›</button>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="bg-white rounded-lg border p-6 space-y-4" style={{ borderColor: "#e8dcc8" }}>
-        <div className="flex items-end gap-4 flex-wrap">
-          <div className="flex-1 min-w-[300px]">
-            <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-              Claude API Key
-            </label>
+      <div className="card p-6 space-y-4">
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex-1 min-w-[280px]">
+            <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">Claude API Key</label>
             <input
-              type="password"
-              value={apiKey}
+              type="password" value={apiKey}
               onChange={(e) => saveApiKey(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
               style={{ borderColor: "#e8dcc8" }}
               placeholder="sk-ant-..."
             />
           </div>
-          <button
-            onClick={generateShift}
-            disabled={generating}
-            className="text-sm px-5 py-2 rounded-md font-medium text-white transition-colors disabled:opacity-50 whitespace-nowrap"
-            style={{ background: "#b8960c" }}
-            onMouseEnter={(e) => { if (!generating) e.currentTarget.style.background = "#c9a84c"; }}
-            onMouseLeave={(e) => { if (!generating) e.currentTarget.style.background = "#b8960c"; }}
-          >
-            {generating ? "AI生成中..." : "AIでシフト生成"}
+          <button onClick={generateShift} disabled={generating} className="btn-primary whitespace-nowrap">
+            {generating ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                生成中...
+              </span>
+            ) : "AIで生成"}
           </button>
           {shifts.length > 0 && !isConfirmed && (
-            <button
-              onClick={confirmShifts}
-              className="text-sm px-5 py-2 rounded-md font-medium border transition-colors whitespace-nowrap"
-              style={{ borderColor: "#b8960c", color: "#b8960c" }}
-            >
-              シフト確定
-            </button>
+            <button onClick={confirmShifts} className="btn-outline whitespace-nowrap">確定</button>
           )}
           {shifts.length > 0 && (
-            <button
-              onClick={exportCsv}
-              className="text-sm px-5 py-2 rounded-md font-medium text-gray-500 border transition-colors whitespace-nowrap hover:bg-gray-50"
-              style={{ borderColor: "#e8dcc8" }}
-            >
-              CSV出力
-            </button>
+            <button onClick={exportCsv} className="btn-ghost whitespace-nowrap">CSV出力</button>
           )}
         </div>
 
         {error && (
-          <div className="text-sm px-4 py-3 rounded-md" style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" }}>
+          <div className="text-sm px-4 py-3 rounded-lg animate-in" style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" }}>
             {error}
           </div>
         )}
 
         {notes && (
-          <div className="text-sm px-4 py-3 rounded-md" style={{ background: "#f5f0e1", color: "#8a7200", border: "1px solid #e8dcc8" }}>
-            <span className="font-semibold">AI判断メモ:</span> {notes}
+          <div className="text-sm px-4 py-3 rounded-lg animate-in" style={{ background: "#f5f0e1", color: "#6b5c00", border: "1px solid #e8dcc8" }}>
+            <span className="font-semibold">AI判断メモ：</span> {notes}
           </div>
         )}
 
         {isConfirmed && (
-          <div className="text-xs px-4 py-2 rounded-md font-medium tracking-wide" style={{ background: "#f5f0e1", color: "#8a7200", border: "1px solid #e8dcc8" }}>
-            このシフトは確定済みです
+          <div className="text-xs px-4 py-2 rounded-lg font-medium tracking-wide flex items-center gap-1.5" style={{ background: "#f5f0e1", color: "#8a7200" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            確定済み
           </div>
         )}
       </div>
 
-      {/* Shift Calendar */}
       {shifts.length > 0 ? (
-        <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#e8dcc8" }}>
+        <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead style={{ background: "#fffdf7", borderBottom: "1px solid #e8dcc8" }}>
+            <thead className="table-header">
               <tr>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 tracking-wide w-20">日付</th>
+                <th className="px-3 py-3 text-left text-[11px] font-medium text-gray-500 tracking-wider w-20">日付</th>
                 {SHIFT_TYPES.map((st) => (
-                  <th key={st.key} className="px-3 py-3 text-left text-xs font-medium tracking-wide" style={{ color: "#b8960c" }}>
-                    {st.label}
-                    <span className="text-gray-400 text-[10px] ml-1 font-normal">({st.time})</span>
+                  <th key={st.key} className="px-3 py-3 text-left text-[11px] font-semibold tracking-wide" style={{ color: "#b8960c" }}>
+                    <span className="text-sm">{st.label}</span>
+                    <span className="text-gray-400 text-[10px] ml-1 font-normal">{st.time}</span>
                   </th>
                 ))}
               </tr>
@@ -249,22 +220,22 @@ export default function SchedulePage() {
                 const dow = getDayOfWeek(date);
                 const weekend = isWeekend(date);
                 const isTuesday = new Date(date).getDay() === 2;
+                const isSunday = new Date(date).getDay() === 0;
                 const dayShifts = shiftsByDate.get(date) || [];
                 const d = parseInt(date.split("-")[2]);
 
                 if (isTuesday) {
                   return (
-                    <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: "#f7f7f5" }}>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-300">{d}({dow})</td>
-                      <td colSpan={5} className="px-3 py-2 text-center text-xs text-gray-300 tracking-wide">定休日</td>
+                    <tr key={date} className="table-row-closed">
+                      <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-300">{d}({dow})</td>
+                      <td colSpan={5} className="px-3 py-2 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
                     </tr>
                   );
                 }
 
                 return (
-                  <tr key={date} style={{ borderBottom: "1px solid #f0ece3", background: weekend ? "#fffdf7" : "transparent" }}>
-                    <td className={`px-3 py-2 whitespace-nowrap text-xs ${weekend ? "font-semibold" : "text-gray-600"}`}
-                      style={weekend ? { color: "#c9a84c" } : {}}>
+                  <tr key={date} className={weekend ? "table-row-weekend" : "table-row"}>
+                    <td className="px-3 py-2 whitespace-nowrap text-[11px]" style={isSunday ? { color: "#d4766a" } : weekend ? { color: "#c9a84c", fontWeight: 600 } : { color: "#888" }}>
                       {d}({dow})
                     </td>
                     {SHIFT_TYPES.map((st) => {
@@ -272,24 +243,13 @@ export default function SchedulePage() {
                       return (
                         <td key={st.key} className="px-3 py-2">
                           <div className="flex flex-wrap gap-1">
-                            {staffInShift.map((s) => (
-                              <span
-                                key={s.id}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] border"
-                                style={{ background: "#f5f0e1", borderColor: "#e8dcc8", color: "#6b5c00" }}
-                              >
+                            {staffInShift.length > 0 ? staffInShift.map((s) => (
+                              <span key={s.id} className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium" style={{ background: "#fffdf7", border: "1px solid #e8dcc8", color: "#6b5c00" }}>
                                 {s.staff_name}
-                                {s.is_owner ? (
-                                  <span className="ml-1" style={{ color: "#d4af37" }}>★</span>
-                                ) : null}
-                                {s.experience_level === "junior" && (
-                                  <span className="ml-1 text-gray-400 text-[9px]">新</span>
-                                )}
+                                {s.is_owner ? <span className="ml-1" style={{ color: "#d4af37" }}>★</span> : null}
+                                {s.experience_level === "junior" && <span className="ml-1 text-gray-400 text-[9px]">新</span>}
                               </span>
-                            ))}
-                            {staffInShift.length === 0 && (
-                              <span className="text-gray-300">-</span>
-                            )}
+                            )) : <span className="text-gray-200">—</span>}
                           </div>
                         </td>
                       );
@@ -301,19 +261,26 @@ export default function SchedulePage() {
           </table>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border p-12 text-center" style={{ borderColor: "#e8dcc8" }}>
-          <p className="text-sm text-gray-400 mb-2">まだシフトが生成されていません</p>
-          <p className="text-xs text-gray-300">APIキーを入力して「AIでシフト生成」を押してください</p>
+        <div className="card p-12 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: "#f5f0e1" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8960c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <p className="text-sm text-gray-500 mb-1">まだシフトが生成されていません</p>
+          <p className="text-xs text-gray-400">APIキーを入力して「AIで生成」を押してください</p>
         </div>
       )}
 
-      {/* Stats */}
       {shifts.length > 0 && (
-        <div className="bg-white rounded-lg border p-6" style={{ borderColor: "#e8dcc8" }}>
-          <h2 className="text-xs font-medium tracking-widest uppercase mb-4" style={{ color: "#b8960c" }}>
+        <div className="card p-6">
+          <h2 className="text-[11px] font-semibold tracking-[0.2em] uppercase mb-4" style={{ color: "#b8960c" }}>
             Statistics
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {(() => {
               const counts = new Map<string, { total: number; slot1: number; slot2: number; slot3: number; slot4: number; slot5: number; isOwner: boolean }>();
               shifts.forEach((s) => {
@@ -323,20 +290,18 @@ export default function SchedulePage() {
                 c[s.shift_type]++;
                 counts.set(key, c);
               });
-              return Array.from(counts.entries()).map(([name, c]) => (
-                <div
-                  key={name}
-                  className="rounded-lg p-3 border"
-                  style={{ background: "#fffdf7", borderColor: "#e8dcc8" }}
-                >
-                  <div className="text-sm font-semibold text-gray-800">
+              return Array.from(counts.entries())
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([name, c]) => (
+                <div key={name} className="rounded-xl p-3.5 border transition-all hover:shadow-sm" style={{ background: "linear-gradient(180deg, #fffdf7 0%, #fdfaf3 100%)", borderColor: "#e8dcc8" }}>
+                  <div className="text-[13px] font-semibold text-gray-800">
                     {name} {c.isOwner && <span style={{ color: "#d4af37" }}>★</span>}
                   </div>
-                  <div className="text-lg font-semibold mt-1" style={{ color: "#b8960c" }}>
-                    {c.total}<span className="text-xs text-gray-400 font-normal ml-1">回</span>
+                  <div className="text-2xl font-bold mt-1.5" style={{ color: "#b8960c" }}>
+                    {c.total}<span className="text-[11px] text-gray-400 font-normal ml-1">回</span>
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-0.5 tracking-wide">
-                    {"\u2460"}{c.slot1} / {"\u2461"}{c.slot2} / {"\u2462"}{c.slot3} / {"\u2463"}{c.slot4} / {"\u2464"}{c.slot5}
+                  <div className="text-[10px] text-gray-400 mt-1 tracking-wide font-mono">
+                    ①{c.slot1} ②{c.slot2} ③{c.slot3} ④{c.slot4} ⑤{c.slot5}
                   </div>
                 </div>
               ));

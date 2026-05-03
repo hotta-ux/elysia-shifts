@@ -28,15 +28,26 @@ const EXP_LABELS: Record<string, string> = {
   veteran: "ベテラン",
 };
 
+const EXP_STYLES: Record<string, string> = {
+  veteran: "badge-gold",
+  mid: "badge-muted",
+  junior: "badge-muted",
+};
+
 const PERSONALITY_OPTIONS = [
-  "リーダー",
-  "ムードメーカー",
-  "真面目",
-  "テキパキ",
-  "丁寧",
-  "元気",
-  "落ち着き",
-  "オーナー",
+  "リーダー", "ムードメーカー", "真面目", "テキパキ",
+  "丁寧", "元気", "落ち着き", "オーナー",
+];
+
+const SKILLS = [
+  { key: "skill_serving", label: "接客", icon: "S" },
+  { key: "skill_drink", label: "ドリンク", icon: "D" },
+  { key: "skill_register", label: "レジ", icon: "R" },
+  { key: "skill_close", label: "クローズ", icon: "C" },
+  { key: "skill_roast", label: "ロースト", icon: "Ro" },
+  { key: "skill_language", label: "外国語", icon: "L" },
+  { key: "skill_cocktail", label: "カクテル", icon: "Co" },
+  { key: "skill_cleaning", label: "清掃", icon: "Cl" },
 ];
 
 const defaultForm: {
@@ -57,14 +68,8 @@ const defaultForm: {
 } = {
   name: "",
   experience_level: "junior",
-  skill_serving: 3,
-  skill_drink: 3,
-  skill_register: 3,
-  skill_close: 3,
-  skill_roast: 1,
-  skill_language: 1,
-  skill_cocktail: 1,
-  skill_cleaning: 3,
+  skill_serving: 3, skill_drink: 3, skill_register: 3, skill_close: 3,
+  skill_roast: 1, skill_language: 1, skill_cocktail: 1, skill_cleaning: 3,
   personality_tags: [],
   compatibility_notes: "",
   max_days_per_week: 5,
@@ -82,21 +87,17 @@ export default function StaffPage() {
     setStaffList(await res.json());
   }, []);
 
-  useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff]);
+  useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const url = editingId ? `/api/staff/${editingId}` : "/api/staff";
     const method = editingId ? "PUT" : "POST";
-
     await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
     setForm(defaultForm);
     setEditingId(null);
     setShowForm(false);
@@ -105,16 +106,11 @@ export default function StaffPage() {
 
   const handleEdit = (s: Staff) => {
     setForm({
-      name: s.name,
-      experience_level: s.experience_level,
-      skill_serving: s.skill_serving,
-      skill_drink: s.skill_drink,
-      skill_register: s.skill_register,
-      skill_close: s.skill_close,
-      skill_roast: s.skill_roast,
-      skill_language: s.skill_language,
-      skill_cocktail: s.skill_cocktail,
-      skill_cleaning: s.skill_cleaning,
+      name: s.name, experience_level: s.experience_level,
+      skill_serving: s.skill_serving, skill_drink: s.skill_drink,
+      skill_register: s.skill_register, skill_close: s.skill_close,
+      skill_roast: s.skill_roast, skill_language: s.skill_language,
+      skill_cocktail: s.skill_cocktail, skill_cleaning: s.skill_cleaning,
       personality_tags: JSON.parse(s.personality_tags || "[]"),
       compatibility_notes: s.compatibility_notes,
       max_days_per_week: s.max_days_per_week,
@@ -141,64 +137,42 @@ export default function StaffPage() {
 
   return (
     <AdminGuard>
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-gray-800 tracking-wide">スタッフ管理</h1>
-          <div className="w-8 h-px mt-2" style={{ background: "#d4af37" }} />
+          <h1 className="section-title">スタッフ管理</h1>
+          <div className="section-line" />
         </div>
         <button
-          onClick={() => {
-            setForm(defaultForm);
-            setEditingId(null);
-            setShowForm(!showForm);
-          }}
-          className="text-sm px-5 py-2 rounded-md font-medium text-white transition-colors"
-          style={{ background: "#b8960c" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#c9a84c")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#b8960c")}
+          onClick={() => { setForm(defaultForm); setEditingId(null); setShowForm(!showForm); }}
+          className={showForm ? "btn-ghost" : "btn-primary"}
         >
-          {showForm ? "閉じる" : "新規登録"}
+          {showForm ? "閉じる" : "+ 新規登録"}
         </button>
       </div>
 
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-lg border p-6 space-y-5"
-          style={{ borderColor: "#e8dcc8" }}
-        >
+        <form onSubmit={handleSubmit} className="card p-6 space-y-5 animate-in">
           <h2 className="text-sm font-semibold text-gray-700 tracking-wide">
             {editingId ? "スタッフ編集" : "新規スタッフ登録"}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-                名前
-              </label>
+              <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">名前</label>
               <input
-                type="text"
-                value={form.name}
+                type="text" value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
-                style={{ borderColor: "#e8dcc8", }}
-                required
+                className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
+                style={{ borderColor: "#e8dcc8" }} required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-                経験レベル
-              </label>
+              <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">経験レベル</label>
               <select
                 value={form.experience_level}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    experience_level: e.target.value as "junior" | "mid" | "veteran",
-                  })
-                }
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
+                onChange={(e) => setForm({ ...form, experience_level: e.target.value as "junior" | "mid" | "veteran" })}
+                className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
                 style={{ borderColor: "#e8dcc8" }}
               >
                 <option value="junior">新人</option>
@@ -209,33 +183,18 @@ export default function StaffPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-3 tracking-wide">
-              スキル（1-5）
-            </label>
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-              {[
-                { key: "skill_serving", label: "接客" },
-                { key: "skill_drink", label: "ドリンク" },
-                { key: "skill_register", label: "レジ" },
-                { key: "skill_close", label: "クローズ" },
-                { key: "skill_roast", label: "ロースト" },
-                { key: "skill_language", label: "外国語" },
-                { key: "skill_cocktail", label: "カクテル" },
-                { key: "skill_cleaning", label: "清掃" },
-              ].map(({ key, label }) => (
-                <div key={key}>
-                  <label className="text-xs text-gray-500">{label}</label>
+            <label className="block text-[11px] font-medium text-gray-500 mb-3 tracking-wide">スキル（1-5）</label>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {SKILLS.map(({ key, label }) => (
+                <div key={key} className="text-center">
+                  <label className="text-[10px] text-gray-500 block mb-1">{label}</label>
                   <input
-                    type="range"
-                    min={1}
-                    max={5}
+                    type="range" min={1} max={5}
                     value={form[key as keyof typeof form] as number}
-                    onChange={(e) =>
-                      setForm({ ...form, [key]: parseInt(e.target.value) })
-                    }
-                    className="w-full accent-[#b8960c]"
+                    onChange={(e) => setForm({ ...form, [key]: parseInt(e.target.value) })}
+                    className="w-full accent-[#b8960c] h-1"
                   />
-                  <div className="text-center text-sm font-semibold" style={{ color: "#b8960c" }}>
+                  <div className="text-xs font-bold mt-0.5" style={{ color: "#b8960c" }}>
                     {form[key as keyof typeof form] as number}
                   </div>
                 </div>
@@ -244,21 +203,14 @@ export default function StaffPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-2 tracking-wide">
-              性格タグ
-            </label>
+            <label className="block text-[11px] font-medium text-gray-500 mb-2 tracking-wide">性格タグ</label>
             <div className="flex flex-wrap gap-2">
               {PERSONALITY_OPTIONS.map((tag) => (
                 <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className="px-3 py-1 rounded-full text-xs border transition-colors"
-                  style={
-                    form.personality_tags.includes(tag)
-                      ? { background: "#f5f0e1", borderColor: "#d4af37", color: "#8a7200" }
-                      : { background: "#fafaf8", borderColor: "#e5e5e5", color: "#999" }
-                  }
+                  key={tag} type="button" onClick={() => toggleTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 ${
+                    form.personality_tags.includes(tag) ? "badge-gold border-[#d4af37]" : "text-gray-400 border-gray-200 hover:border-gray-300"
+                  }`}
                 >
                   {tag}
                 </button>
@@ -267,200 +219,103 @@ export default function StaffPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-              相性メモ
-            </label>
+            <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">相性メモ</label>
             <textarea
               value={form.compatibility_notes}
-              onChange={(e) =>
-                setForm({ ...form, compatibility_notes: e.target.value })
-              }
-              className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
-              style={{ borderColor: "#e8dcc8" }}
-              rows={2}
+              onChange={(e) => setForm({ ...form, compatibility_notes: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
+              style={{ borderColor: "#e8dcc8" }} rows={2}
               placeholder="例: 山田さんとは相性が良い、佐藤さんとは避ける"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-                週の上限日数
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={7}
-                value={form.max_days_per_week}
-                onChange={(e) =>
-                  setForm({ ...form, max_days_per_week: parseInt(e.target.value) })
-                }
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">週上限日数</label>
+              <input type="number" min={1} max={7} value={form.max_days_per_week}
+                onChange={(e) => setForm({ ...form, max_days_per_week: parseInt(e.target.value) })}
+                className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
                 style={{ borderColor: "#e8dcc8" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wide">
-                連勤上限日数
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={7}
-                value={form.max_consecutive_days}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    max_consecutive_days: parseInt(e.target.value),
-                  })
-                }
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">連勤上限日数</label>
+              <input type="number" min={1} max={7} value={form.max_consecutive_days}
+                onChange={(e) => setForm({ ...form, max_consecutive_days: parseInt(e.target.value) })}
+                className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
                 style={{ borderColor: "#e8dcc8" }}
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              className="text-sm px-6 py-2 rounded-md font-medium text-white transition-colors"
-              style={{ background: "#b8960c" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#c9a84c")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#b8960c")}
-            >
-              {editingId ? "更新" : "登録"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-                setEditingId(null);
-                setForm(defaultForm);
-              }}
-              className="text-sm px-6 py-2 rounded-md font-medium border text-gray-500 hover:bg-gray-50 transition-colors"
-              style={{ borderColor: "#e8dcc8" }}
-            >
+          <div className="flex gap-3 pt-1">
+            <button type="submit" className="btn-primary">{editingId ? "更新" : "登録"}</button>
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(defaultForm); }} className="btn-ghost">
               キャンセル
             </button>
           </div>
         </form>
       )}
 
-      <div
-        className="bg-white rounded-lg border overflow-hidden"
-        style={{ borderColor: "#e8dcc8" }}
-      >
-        <table className="w-full">
-          <thead style={{ background: "#fffdf7", borderBottom: "1px solid #e8dcc8" }}>
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wide">名前</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wide">レベル</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wide">スキル</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wide">性格</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 tracking-wide">週上限</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 tracking-wide">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staffList.map((s, i) => {
-              const tags = JSON.parse(s.personality_tags || "[]");
-              return (
-                <tr
-                  key={s.id}
-                  className="hover:bg-[#fffdf7] transition-colors"
-                  style={{ borderBottom: i < staffList.length - 1 ? "1px solid #f0ece3" : "none" }}
-                >
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">
-                    {s.name}
-                    {s.is_owner ? (
-                      <span
-                        className="ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium"
-                        style={{ background: "#f5f0e1", color: "#8a7200" }}
-                      >
-                        Owner
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={
-                        s.experience_level === "veteran"
-                          ? { background: "#f5f0e1", color: "#8a7200" }
-                          : s.experience_level === "mid"
-                          ? { background: "#f0f0f0", color: "#666" }
-                          : { background: "#f7f7f7", color: "#aaa" }
-                      }
-                    >
+      {/* Staff Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {staffList.map((s) => {
+          const tags = JSON.parse(s.personality_tags || "[]") as string[];
+          return (
+            <div key={s.id} className="card p-5 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={s.is_owner ? { background: "linear-gradient(135deg, #f5f0e1, #e8dcc8)", color: "#8a7200" } : { background: "#f5f5f3", color: "#999" }}>
+                    {s.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                      {s.name}
+                      {s.is_owner && <span className="text-[10px]" style={{ color: "#d4af37" }}>Owner</span>}
+                    </div>
+                    <span className={`${EXP_STYLES[s.experience_level]} badge mt-0.5`}>
                       {EXP_LABELS[s.experience_level]}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {[
-                        { label: "接客", val: s.skill_serving },
-                        { label: "飲料", val: s.skill_drink },
-                        { label: "レジ", val: s.skill_register },
-                        { label: "閉店", val: s.skill_close },
-                        { label: "焙煎", val: s.skill_roast },
-                        { label: "語学", val: s.skill_language },
-                        { label: "夜", val: s.skill_cocktail },
-                        { label: "清掃", val: s.skill_cleaning },
-                      ].filter(sk => sk.val >= 3).map(sk => (
-                        <span
-                          key={sk.label}
-                          className="text-[10px] px-1.5 py-0.5 rounded"
-                          style={
-                            sk.val >= 4
-                              ? { background: "#f5f0e1", color: "#8a7200" }
-                              : { background: "#f0f0f0", color: "#999" }
-                          }
-                        >
-                          {sk.label}{sk.val}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {tags.map((tag: string) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] px-2 py-0.5 rounded-full"
-                          style={{ background: "#f5f0e1", color: "#8a7200" }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-500">
-                    {s.max_days_per_week}日
-                  </td>
-                  <td className="px-4 py-3 text-right space-x-3">
-                    <button
-                      onClick={() => handleEdit(s)}
-                      className="text-xs font-medium transition-colors"
-                      style={{ color: "#b8960c" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#8a7200")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "#b8960c")}
-                    >
-                      編集
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(s)} className="text-[11px] font-medium transition-colors" style={{ color: "#b8960c" }}>
+                    編集
+                  </button>
+                  {!s.is_owner && (
+                    <button onClick={() => handleDelete(s.id)} className="text-[11px] text-gray-300 hover:text-red-400 transition-colors">
+                      削除
                     </button>
-                    {!s.is_owner && (
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        className="text-xs text-gray-400 hover:text-red-500 font-medium transition-colors"
-                      >
-                        削除
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  )}
+                </div>
+              </div>
+
+              {/* Skills */}
+              <div className="flex flex-wrap gap-1">
+                {SKILLS.filter((sk) => (s[sk.key as keyof Staff] as number) >= 3).map((sk) => {
+                  const val = s[sk.key as keyof Staff] as number;
+                  return (
+                    <span key={sk.key} className={`badge ${val >= 4 ? "badge-gold" : "badge-muted"}`}>
+                      {sk.label} {val}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Tags + Meta */}
+              <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <span key={tag} className="badge badge-gold">{tag}</span>
+                  ))}
+                </div>
+                <span className="text-[10px] text-gray-400">
+                  週{s.max_days_per_week}日 / 連勤{s.max_consecutive_days}日
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
     </AdminGuard>

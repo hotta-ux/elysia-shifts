@@ -89,6 +89,38 @@ async function initDb(db: Client) {
     )
   `);
 
+  // Evaluations table for raise system
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS evaluations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      staff_id INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      barista_skill REAL NOT NULL,
+      bean_sales INTEGER DEFAULT 0,
+      bean_sales_score INTEGER DEFAULT 0,
+      shift_contribution INTEGER DEFAULT 0,
+      attitude INTEGER DEFAULT 0,
+      tenure_score INTEGER DEFAULT 0,
+      total_score INTEGER DEFAULT 0,
+      grade TEXT DEFAULT 'G1',
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Bean sales tracking table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS bean_sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      staff_id INTEGER NOT NULL,
+      month TEXT NOT NULL,
+      amount INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE,
+      UNIQUE(staff_id, month)
+    )
+  `);
+
   // Migrate: add new skill columns if missing
   const columns = await db.execute("PRAGMA table_info(staff)");
   const colNames = columns.rows.map(c => c.name as string);
@@ -97,6 +129,9 @@ async function initDb(db: Client) {
     ['skill_language', 'ALTER TABLE staff ADD COLUMN skill_language INTEGER DEFAULT 1'],
     ['skill_cocktail', 'ALTER TABLE staff ADD COLUMN skill_cocktail INTEGER DEFAULT 1'],
     ['skill_cleaning', 'ALTER TABLE staff ADD COLUMN skill_cleaning INTEGER DEFAULT 3'],
+    ['grade', "ALTER TABLE staff ADD COLUMN grade TEXT DEFAULT 'G1'"],
+    ['hire_date', "ALTER TABLE staff ADD COLUMN hire_date TEXT DEFAULT (date('now'))"],
+    ['hourly_wage', 'ALTER TABLE staff ADD COLUMN hourly_wage INTEGER DEFAULT 0'],
   ];
   for (const [col, sql] of migrations) {
     if (!colNames.includes(col)) {
@@ -141,8 +176,34 @@ export type Staff = {
   compatibility_notes: string;
   max_days_per_week: number;
   max_consecutive_days: number;
+  grade: string;
+  hire_date: string;
+  hourly_wage: number;
   created_at: string;
   updated_at: string;
+};
+
+export type Evaluation = {
+  id: number;
+  staff_id: number;
+  period: string;
+  barista_skill: number;
+  bean_sales: number;
+  bean_sales_score: number;
+  shift_contribution: number;
+  attitude: number;
+  tenure_score: number;
+  total_score: number;
+  grade: string;
+  created_at: string;
+};
+
+export type BeanSale = {
+  id: number;
+  staff_id: number;
+  month: string;
+  amount: number;
+  created_at: string;
 };
 
 export type ShiftRequest = {
