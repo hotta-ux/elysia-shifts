@@ -80,10 +80,16 @@ export default function SchedulePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ month: monthStr, apiKey }),
       });
-      const data = await res.json();
-      if (!res.ok) setError(data.error || "エラーが発生しました");
+      const text = await res.text();
+      let data: { error?: string; notes?: string };
+      try { data = JSON.parse(text); }
+      catch { setError(`サーバー応答が不正です (HTTP ${res.status}): ${text.slice(0, 200)}`); return; }
+      if (!res.ok) setError(data.error || `エラー (HTTP ${res.status})`);
       else { setNotes(data.notes || ""); await fetchShifts(); }
-    } catch { setError("通信エラーが発生しました"); }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setError(`通信エラー: ${msg}（タイムアウトの可能性があります）`);
+    }
     finally { setGenerating(false); }
   };
 

@@ -127,22 +127,23 @@ ${staffInfo}
 ## 各日の希望状況
 ${scheduleInfo}
 
-## 出力形式
+## 出力形式（重要：トークン数を抑えるため圧縮形式で出力）
 以下のJSON形式で出力してください。JSONのみを出力し、他のテキストは含めないでください。
+"shifts" は [staff_id, "YYYY-MM-DD", "slotN"] のタプル配列で出力すること。
 
 {
   "shifts": [
-    { "staff_id": 1, "date": "2026-05-01", "shift_type": "slot1" },
-    ...
+    [1, "2026-05-01", "slot1"],
+    [2, "2026-05-01", "slot2"]
   ],
-  "notes": "編成の判断理由やメモ（日本語で）"
+  "notes": "編成の判断理由やメモ（200字以内）"
 }`;
 
   try {
     const client = new Anthropic({ apiKey });
     const message = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8192,
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -150,16 +151,38 @@ ${scheduleInfo}
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json({ error: 'AIからの応答を解析できませんでした', raw: responseText }, { status: 500 });
+      return NextResponse.json({
+        error: 'AIからの応答を解析できませんでした。max_tokens不足の可能性があります。',
+        raw: responseText.slice(0, 500),
+        stop_reason: message.stop_reason,
+      }, { status: 500 });
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+    let result;
+    try {
+      result = JSON.parse(jsonMatch[0]);
+    } catch {
+      return NextResponse.json({
+        error: 'AIの応答JSONが不完全です（max_tokens超過の可能性）',
+        raw: responseText.slice(-500),
+        stop_reason: message.stop_reason,
+      }, { status: 500 });
+    }
+
+    // Normalize: support both tuple [id, date, slot] and object {staff_id, date, shift_type}
+    type ShiftIn = [number, string, string] | { staff_id: number; date: string; shift_type: string };
+    const normalized = (result.shifts as ShiftIn[]).map((s) => {
+      if (Array.isArray(s)) {
+        return { staff_id: s[0], date: s[1], shift_type: s[2] };
+      }
+      return s;
+    });
 
     // Save shifts to DB
     const stmts: { sql: string; args: (string | number)[] }[] = [
       { sql: 'DELETE FROM shifts WHERE date LIKE ?', args: [`${month}%`] },
     ];
-    for (const s of result.shifts) {
+    for (const s of normalized) {
       stmts.push({
         sql: 'INSERT INTO shifts (staff_id, date, shift_type) VALUES (?, ?, ?)',
         args: [s.staff_id, s.date, s.shift_type],
@@ -169,12 +192,14 @@ ${scheduleInfo}
 
     return NextResponse.json({
       success: true,
-      shifts: result.shifts,
+      shifts: normalized,
       notes: result.notes,
-      count: result.shifts.length,
+      count: normalized.length,
+      stop_reason: message.stop_reason,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Shift generation error:', error);
     return NextResponse.json({ error: `シフト生成エラー: ${message}` }, { status: 500 });
   }
 }
