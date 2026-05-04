@@ -83,7 +83,10 @@ export async function POST(req: NextRequest) {
       const available = staff.filter(s => {
         const key = `${s.id}-${date}-${st}`;
         const avail = requestMap.get(key);
-        return (s.is_owner && s.name === '堀田') || avail === 'available' || avail === 'either' || !avail;
+        // Only those who explicitly chose 'available' or 'either'.
+        // Owner 堀田 is always available (daily attendance constraint).
+        // Absence of submission is treated as unavailable.
+        return (s.is_owner && s.name === '堀田') || avail === 'available' || avail === 'either';
       }).map(s => s.name).join(', ');
       const unavailable = staff.filter(s => {
         const key = `${s.id}-${date}-${st}`;
@@ -110,7 +113,7 @@ ${staffInfo}
 ## 重要ルール（ハード制約 — 必ず守る）
 1. 火曜日は定休日なので絶対にシフトを入れない
 2. 堀田はオーナーなので営業日は毎日必ずいずれかのシフトに入れる（1日1枠以上）。高培勛はオーナーだが毎日出勤の制約はない
-3. 出勤不可の日時にはアサインしない
+3. **【絶対】「出勤可能」リストに名前がないスタッフは絶対にアサインしない**。シフト希望を提出していない、もしくは「不可」または未入力の枠には絶対に入れないこと。堀田のみ毎日出勤の制約で例外的に常に候補となる
 4. 各スタッフの週上限・連勤上限を守る
 5. 各枠の必要人数を満たす
 6. **【最重要】同じスタッフが同日に複数枠に入る場合、必ず連続した枠にする**（例: \u2460\u2461\u2462はOK、\u2460\u2462や\u2461\u2463のような分断は絶対禁止）。一度帰宅して再出勤する分断シフトは通勤負担が大きく、絶対に避けること
@@ -183,11 +186,24 @@ ${scheduleInfo}
       return s;
     });
 
-    // Save shifts to DB
+    // Server-side validation: drop assignments where the staff did not request availability.
+    // 堀田 (owner with daily attendance constraint) is exempt.
+    const hottaStaff = staff.find(s => s.is_owner && s.name === '堀田');
+    const hottaId = hottaStaff?.id;
+    const rejected: { staff_id: number; date: string; shift_type: string; reason: string }[] = [];
+    const validated = normalized.filter(s => {
+      if (s.staff_id === hottaId) return true;
+      const avail = requestMap.get(`${s.staff_id}-${s.date}-${s.shift_type}`);
+      if (avail === 'available' || avail === 'either') return true;
+      rejected.push({ ...s, reason: avail ? `availability=${avail}` : 'no_request' });
+      return false;
+    });
+
+    // Save shifts to DB (only validated entries)
     const stmts: { sql: string; args: (string | number)[] }[] = [
       { sql: 'DELETE FROM shifts WHERE date LIKE ?', args: [`${month}%`] },
     ];
-    for (const s of normalized) {
+    for (const s of validated) {
       stmts.push({
         sql: 'INSERT INTO shifts (staff_id, date, shift_type) VALUES (?, ?, ?)',
         args: [s.staff_id, s.date, s.shift_type],
@@ -195,10 +211,16 @@ ${scheduleInfo}
     }
     await db.batch(stmts, 'write');
 
+    const noteSuffix = rejected.length > 0
+      ? `
+⚠ AIが希望未提出の枚に${rejected.length}件アサインしたためサーバー側で除外しました。`
+      : '';
+
     return NextResponse.json({
       success: true,
-      shifts: normalized,
-      notes: result.notes,
+      shifts: validated,
+      notes: (result.notes || '') + noteSuffix,
+      rejected,
       count: normalized.length,
       stop_reason: message.stop_reason,
     });
