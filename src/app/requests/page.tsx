@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import { getShiftTypes } from "@/lib/shifts";
 
 type Staff = {
   id: number;
@@ -17,13 +18,7 @@ type ShiftRequest = {
   staff_name?: string;
 };
 
-const SHIFT_TYPES = [
-  { key: "slot1", label: "①" },
-  { key: "slot2", label: "②" },
-  { key: "slot3", label: "③" },
-  { key: "slot4", label: "④" },
-  { key: "slot5", label: "⑤" },
-];
+
 
 function getDaysInMonth(year: number, month: number) {
   const days: string[] = [];
@@ -59,6 +54,8 @@ export default function RequestsPage() {
 
   const monthStr = `${year}-${String(month).padStart(2, "0")}`;
   const days = getDaysInMonth(year, month);
+  const SHIFT_TYPES = getShiftTypes(year, month);
+  const slotCount = SHIFT_TYPES.length;
 
   const fetchStaff = useCallback(async () => {
     const res = await fetch("/api/staff");
@@ -207,7 +204,7 @@ export default function RequestsPage() {
                       return (
                         <tr key={date} className="table-row-closed">
                           <td className="px-2 py-1 text-[11px] text-gray-300">{d}({dow})</td>
-                          <td colSpan={5} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
+                          <td colSpan={slotCount} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
                         </tr>
                       );
                     }
@@ -261,7 +258,7 @@ export default function RequestsPage() {
                   return (
                     <tr key={date} className="table-row-closed">
                       <td className="px-2 py-1 text-[11px] text-gray-300">{d}({dow})</td>
-                      <td colSpan={5} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
+                      <td colSpan={slotCount} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
                     </tr>
                   );
                 }

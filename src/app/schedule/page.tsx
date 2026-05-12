@@ -2,25 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import { getShiftTypes } from "@/lib/shifts";
 
 type ShiftEntry = {
   id: number;
   staff_id: number;
   date: string;
-  shift_type: "slot1" | "slot2" | "slot3" | "slot4" | "slot5";
+  shift_type: string;
   staff_name: string;
   experience_level: string;
   is_owner: number;
   is_confirmed: number;
 };
 
-const SHIFT_TYPES = [
-  { key: "slot1", label: "①", time: "8:00-11:00" },
-  { key: "slot2", label: "②", time: "11:00-14:00" },
-  { key: "slot3", label: "③", time: "14:00-17:00" },
-  { key: "slot4", label: "④", time: "17:00-20:00" },
-  { key: "slot5", label: "⑤", time: "20:00-23:00" },
-];
+
 
 function getDaysInMonth(year: number, month: number) {
   const days: string[] = [];
@@ -52,6 +47,8 @@ export default function SchedulePage() {
 
   const monthStr = `${year}-${String(month).padStart(2, "0")}`;
   const days = getDaysInMonth(year, month);
+  const SHIFT_TYPES = getShiftTypes(year, month);
+  const slotCount = SHIFT_TYPES.length;
 
   const fetchShifts = useCallback(async () => {
     const res = await fetch(`/api/shifts?month=${monthStr}`);
@@ -104,17 +101,17 @@ export default function SchedulePage() {
   };
 
   const exportCsv = () => {
-    const header = ["日付", "曜日", "①(8-11)", "②(11-14)", "③(14-17)", "④(17-20)", "⑤(20-23)"];
+    const header = ["日付", "曜日", ...SHIFT_TYPES.map(st => `${st.label}(${st.time})`)];
     const rows = days.map((date) => {
       const dow = getDayOfWeek(date);
       const d = parseInt(date.split("-")[2]);
       const isTuesday = new Date(date).getDay() === 2;
-      if (isTuesday) return [`${d}`, dow, "定休日", "定休日", "定休日", "定休日", "定休日"];
+      if (isTuesday) return [`${d}`, dow, ...SHIFT_TYPES.map(() => "定休日")];
       const getStaff = (type: string) =>
         shifts.filter((s) => s.date === date && s.shift_type === type)
           .map((s) => `${s.staff_name}${s.is_owner ? "(Owner)" : ""}`)
           .join(" / ") || "-";
-      return [`${d}`, dow, getStaff("slot1"), getStaff("slot2"), getStaff("slot3"), getStaff("slot4"), getStaff("slot5")];
+      return [`${d}`, dow, ...SHIFT_TYPES.map(st => getStaff(st.key))];
     });
     const bom = "﻿";
     const csv = bom + [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
@@ -234,7 +231,7 @@ export default function SchedulePage() {
                   return (
                     <tr key={date} className="table-row-closed">
                       <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-300">{d}({dow})</td>
-                      <td colSpan={5} className="px-3 py-2 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
+                      <td colSpan={slotCount} className="px-3 py-2 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
                     </tr>
                   );
                 }
@@ -288,13 +285,13 @@ export default function SchedulePage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {(() => {
-              const counts = new Map<string, { total: number; slot1: number; slot2: number; slot3: number; slot4: number; slot5: number; isOwner: boolean }>();
+              const counts = new Map<string, { total: number; perSlot: Record<string, number>; isOwner: boolean }>();
               shifts.forEach((s) => {
                 const key = s.staff_name;
-                const c = counts.get(key) || { total: 0, slot1: 0, slot2: 0, slot3: 0, slot4: 0, slot5: 0, isOwner: !!s.is_owner };
-                c.total++;
-                c[s.shift_type]++;
-                counts.set(key, c);
+                const cur = counts.get(key) || { total: 0, perSlot: {}, isOwner: !!s.is_owner };
+                cur.total++;
+                cur.perSlot[s.shift_type] = (cur.perSlot[s.shift_type] || 0) + 1;
+                counts.set(key, cur);
               });
               return Array.from(counts.entries())
                 .sort((a, b) => b[1].total - a[1].total)
@@ -307,7 +304,7 @@ export default function SchedulePage() {
                     {c.total}<span className="text-[11px] text-gray-400 font-normal ml-1">回</span>
                   </div>
                   <div className="text-[10px] text-gray-400 mt-1 tracking-wide font-mono">
-                    ①{c.slot1} ②{c.slot2} ③{c.slot3} ④{c.slot4} ⑤{c.slot5}
+                    {SHIFT_TYPES.map(st => `${st.label}${c.perSlot[st.key] || 0}`).join(" ")}
                   </div>
                 </div>
               ));

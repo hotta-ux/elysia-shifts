@@ -2,18 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import { getShiftTypes } from "@/lib/shifts";
+
 type Staff = {
   id: number;
   name: string;
 };
-
-const SHIFT_TYPES = [
-  { key: "slot1", label: "\u2460", time: "8:00-11:00" },
-  { key: "slot2", label: "\u2461", time: "11:00-14:00" },
-  { key: "slot3", label: "\u2462", time: "14:00-17:00" },
-  { key: "slot4", label: "\u2463", time: "17:00-20:00" },
-  { key: "slot5", label: "\u2464", time: "20:00-23:00" },
-];
 
 function getDaysInMonth(year: number, month: number) {
   const days: string[] = [];
@@ -62,6 +56,8 @@ export default function SubmitPage() {
 
   const monthStr = `${year}-${String(month).padStart(2, "0")}`;
   const days = getDaysInMonth(year, month);
+  const SHIFT_TYPES = getShiftTypes(year, month);
+  const slotCount = SHIFT_TYPES.length;
 
   const fetchStaff = useCallback(async () => {
     const res = await fetch("/api/staff");
@@ -272,7 +268,7 @@ export default function SubmitPage() {
                 return (
                   <tr key={date} className="table-row-closed">
                     <td className="px-3 py-1.5 text-[11px] text-gray-300">{d}<span className="text-gray-300 ml-0.5">({dow})</span></td>
-                    <td colSpan={5} className="py-1.5 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
+                    <td colSpan={slotCount} className="py-1.5 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
                   </tr>
                 );
               }

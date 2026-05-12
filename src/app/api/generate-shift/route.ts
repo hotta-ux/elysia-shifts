@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, Staff, ShiftRequest } from '@/lib/db';
+import { getShiftTypes } from '@/lib/shifts';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Vercel: allow up to 60s for AI generation (default is 10s on Hobby plan)
 export const maxDuration = 60;
-
-const SHIFT_LABELS: Record<string, string> = {
-  slot1: '\u2460(8:00-11:00)',
-  slot2: '\u2461(11:00-14:00)',
-  slot3: '\u2462(14:00-17:00)',
-  slot4: '\u2463(17:00-20:00)',
-  slot5: '\u2464(20:00-23:00)',
-};
 
 function getDaysInMonth(year: number, month: number): string[] {
   const days: string[] = [];
@@ -46,6 +39,10 @@ export async function POST(req: NextRequest) {
   const year = parseInt(yearStr);
   const mon = parseInt(monthStr);
   const days = getDaysInMonth(year, mon);
+  const shiftConfig = getShiftTypes(year, mon);
+  const SHIFT_LABELS: Record<string, string> = Object.fromEntries(shiftConfig.map(s => [s.key, `${s.label}(${s.time})`]));
+  const slotKeys = shiftConfig.map(s => s.key);
+  const slotLabelsJoined = shiftConfig.map(s => `${s.label}(${s.time})`).join(', ');
 
   const staffResult = await db.execute('SELECT * FROM staff');
   const staff = staffResult.rows as unknown as Staff[];
@@ -76,7 +73,7 @@ export async function POST(req: NextRequest) {
     const dow = getDayOfWeek(date);
     const weekend = isWeekend(date);
     const needed = weekend ? settings.weekend_staff_count : settings.weekday_staff_count;
-    const shiftTypes = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5'] as const;
+    const shiftTypes = slotKeys;
 
     const dayRequests = shiftTypes.map(st => {
       const label = SHIFT_LABELS[st];
@@ -103,7 +100,7 @@ export async function POST(req: NextRequest) {
 ## 店舗情報
 - 赤坂店
 - 定休日: 毎週火曜日（火曜日はシフトなし）
-- シフト枠: \u2460(8:00-11:00), \u2461(11:00-14:00), \u2462(14:00-17:00), \u2463(17:00-20:00), \u2464(20:00-23:00)
+- シフト枠: ${slotLabelsJoined}
 - 平日: 各枠${settings.weekday_staff_count}名
 - 土日: 各枠${settings.weekend_staff_count}名
 
@@ -127,10 +124,10 @@ ${staffInfo}
 6. スキルバランス（全員新人にしない）
 7. 勤務日数を公平に配分
 8. 希望シフトをできるだけ尊重
-9. 堀田は\u2460(8:00-11:00)に入ることが多いが、バランスも考慮
-10. \u2464(20:00-23:00)にはカクテルスキルが高い人を優先配置
+9. 堀田は最も早い枠（早番）に入ることが多いが、バランスも考慮
+10. 最も遅い枠（深夜枠）にはカクテルスキルが高い人を優先配置
 11. ロースト・外国語・清掃などの特殊スキルもバランスよく分散
-12. 体力配慮：同じスタッフを連日「\u2464の遅番\u2192翌日\u2460の早番」のような短間隔シフトに入れない
+12. 体力配慮：同じスタッフを連日「最終枠（遅番）→翌日最初の枠（早番）」のような短間隔シフトに入れない
 
 ## 各日の希望状況
 ${scheduleInfo}
