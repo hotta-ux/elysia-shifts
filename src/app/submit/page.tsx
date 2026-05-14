@@ -55,6 +55,8 @@ export default function SubmitPage() {
   const days = getDaysInMonth(year, month);
   const SHIFT_TYPES = getShiftTypes(year, month);
   const slotCount = SHIFT_TYPES.length;
+  // 堀田 (owner) defaults to 'available' for every slot; others default to 'unavailable'.
+  const defaultAvail = staffName === "堀田" ? "available" : "unavailable";
 
   const fetchStaff = useCallback(async () => {
     const res = await fetch("/api/staff");
@@ -88,7 +90,7 @@ export default function SubmitPage() {
 
   const toggleAvailability = (date: string, shiftType: string) => {
     const key = `${date}-${shiftType}`;
-    const current = requests.get(key) || "unavailable";
+    const current = requests.get(key) || defaultAvail;
     const order = ["available", "either", "unavailable"];
     const nextIdx = (order.indexOf(current) + 1) % order.length;
     const newMap = new Map(requests);
@@ -266,7 +268,7 @@ return (
                   </td>
                   {SHIFT_TYPES.map((st) => {
                     const key = `${date}-${st.key}`;
-                    const avail = requests.get(key) || "unavailable";
+                    const avail = requests.get(key) || defaultAvail;
                     return (
                       <td key={st.key} className="px-1 py-1 text-center">
                         <button
