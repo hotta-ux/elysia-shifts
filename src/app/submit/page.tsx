@@ -103,10 +103,22 @@ export default function SubmitPage() {
     if (!selectedStaff) return;
     setSaving(true);
     const requestArray: { staff_id: number; date: string; shift_type: string; availability: string }[] = [];
-    requests.forEach((availability, key) => {
-      const [date, shift_type] = [key.substring(0, 10), key.substring(11)];
-      requestArray.push({ staff_id: selectedStaff, date, shift_type, availability });
-    });
+    // For 堀田: fill every day/slot with defaultAvail (= "available") if not explicitly tapped.
+    // For others: only save tapped slots.
+    if (defaultAvail === "available") {
+      for (const date of days) {
+        for (const st of SHIFT_TYPES) {
+          const key = `${date}-${st.key}`;
+          const availability = requests.get(key) || defaultAvail;
+          requestArray.push({ staff_id: selectedStaff, date, shift_type: st.key, availability });
+        }
+      }
+    } else {
+      requests.forEach((availability, key) => {
+        const [date, shift_type] = [key.substring(0, 10), key.substring(11)];
+        requestArray.push({ staff_id: selectedStaff, date, shift_type, availability });
+      });
+    }
     await fetch("/api/shift-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
