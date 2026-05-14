@@ -38,9 +38,6 @@ function isWeekend(dateStr: string) {
   return day === 0 || day === 6;
 }
 
-function isTuesday(dateStr: string) {
-  return new Date(dateStr).getDay() === 2;
-}
 
 export default function RequestsPage() {
   const now = new Date();
@@ -132,14 +129,13 @@ export default function RequestsPage() {
   const summaryByDate = days.map((date) => {
     const dow = getDayOfWeek(date);
     const weekend = isWeekend(date);
-    const tuesday = isTuesday(date);
     const byShift = SHIFT_TYPES.map((st) => {
       const staffForShift = allRequests
         .filter((r) => r.date === date && r.shift_type === st.key && r.availability !== "unavailable")
         .map((r) => ({ name: r.staff_name || "", availability: r.availability }));
       return { ...st, staff: staffForShift };
     });
-    return { date, dow, weekend, tuesday, shifts: byShift };
+    return { date, dow, weekend, shifts: byShift };
   });
 
   return (
@@ -196,20 +192,9 @@ export default function RequestsPage() {
                   {days.map((date) => {
                     const dow = getDayOfWeek(date);
                     const weekend = isWeekend(date);
-                    const tuesday = isTuesday(date);
                     const d = parseInt(date.split("-")[2]);
                     const isSunday = new Date(date).getDay() === 0;
-
-                    if (tuesday) {
-                      return (
-                        <tr key={date} className="table-row-closed">
-                          <td className="px-2 py-1 text-[11px] text-gray-300">{d}({dow})</td>
-                          <td colSpan={slotCount} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
-                        </tr>
-                      );
-                    }
-
-                    return (
+return (
                       <tr key={date} className={weekend ? "table-row-weekend" : "table-row"}>
                         <td className="px-2 py-1 text-[11px] whitespace-nowrap" style={isSunday ? { color: "#d4766a" } : weekend ? { color: "#c9a84c", fontWeight: 600 } : { color: "#888" }}>
                           {d}({dow})
@@ -251,18 +236,10 @@ export default function RequestsPage() {
               </tr>
             </thead>
             <tbody>
-              {summaryByDate.map(({ date, dow, weekend, tuesday, shifts }) => {
+              {summaryByDate.map(({ date, dow, weekend, shifts }) => {
                 const d = parseInt(date.split("-")[2]);
                 const isSunday = new Date(date).getDay() === 0;
-                if (tuesday) {
-                  return (
-                    <tr key={date} className="table-row-closed">
-                      <td className="px-2 py-1 text-[11px] text-gray-300">{d}({dow})</td>
-                      <td colSpan={slotCount} className="py-1 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
-                    </tr>
-                  );
-                }
-                return (
+return (
                   <tr key={date} className={weekend ? "table-row-weekend" : "table-row"}>
                     <td className="px-2 py-1 text-[11px] whitespace-nowrap" style={isSunday ? { color: "#d4766a" } : weekend ? { color: "#c9a84c", fontWeight: 600 } : { color: "#888" }}>
                       {d}({dow})

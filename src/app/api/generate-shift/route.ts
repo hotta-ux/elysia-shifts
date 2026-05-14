@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
     return `- ${s.name} (ID:${s.id}): ${s.is_owner ? (s.name === '堀田' ? 'オーナー（毎日出勤）' : 'オーナー') : ''} 経験=${s.experience_level === 'veteran' ? 'ベテラン' : s.experience_level === 'mid' ? '中堅' : '新人'}, 接客=${s.skill_serving}, ドリンク=${s.skill_drink}, レジ=${s.skill_register}, クローズ=${s.skill_close}, ロースト=${s.skill_roast}, 外国語=${s.skill_language}, カクテル(夜)=${s.skill_cocktail}, 清掃=${s.skill_cleaning}, 性格=[${tags.join(',')}], 相性メモ: ${s.compatibility_notes || 'なし'}, 週上限=${s.max_days_per_week}日, 連勤上限=${s.max_consecutive_days}日`;
   }).join('\n');
 
-  const openDays = days.filter(date => new Date(date).getDay() !== settings.closed_day);
+  // No closed day — all days are open
+  const openDays = days;
 
   const scheduleInfo = openDays.map(date => {
     const dow = getDayOfWeek(date);
@@ -99,7 +100,6 @@ export async function POST(req: NextRequest) {
 
 ## 店舗情報
 - 赤坂店
-- 定休日: 毎週火曜日（火曜日はシフトなし）
 - シフト枠: ${slotLabelsJoined}
 - 平日: 各枠${settings.weekday_staff_count}名
 - 土日: 各枠${settings.weekend_staff_count}名
@@ -108,12 +108,11 @@ export async function POST(req: NextRequest) {
 ${staffInfo}
 
 ## 重要ルール（ハード制約 — 必ず守る）
-1. 火曜日は定休日なので絶対にシフトを入れない
-2. 堀田はオーナーなので営業日は毎日必ずいずれかのシフトに入れる（1日1枠以上）。高培勛はオーナーだが毎日出勤の制約はない
-3. **【絶対】「出勤可能」リストに名前がないスタッフは絶対にアサインしない**。シフト希望を提出していない、もしくは「不可」または未入力の枠には絶対に入れないこと。堀田のみ毎日出勤の制約で例外的に常に候補となる
-4. 各スタッフの週上限・連勤上限を守る
-5. 各枠の必要人数を満たす
-6. **【最重要】同じスタッフが同日に複数枠に入る場合、必ず連続した枠にする**（例: \u2460\u2461\u2462はOK、\u2460\u2462や\u2461\u2463のような分断は絶対禁止）。一度帰宅して再出勤する分断シフトは通勤負担が大きく、絶対に避けること
+1. 堀田はオーナーなので毎日必ずいずれかのシフトに入れる（1日1枠以上）。高培勛はオーナーだが毎日出勤の制約はない
+2. **【絶対】「出勤可能」リストに名前がないスタッフは絶対にアサインしない**。シフト希望を提出していない、もしくは「不可」または未入力の枠には絶対に入れないこと。堀田のみ毎日出勤の制約で例外的に常に候補となる
+3. 各スタッフの週上限・連勤上限を守る
+4. 各枠の必要人数を満たす
+5. **【最重要】同じスタッフが同日に複数枠に入る場合、必ず連続した枠にする**（例: \u2460\u2461\u2462はOK、\u2460\u2462や\u2461\u2463のような分断は絶対禁止）。一度帰宅して再出勤する分断シフトは通勤負担が大きく、絶対に避けること
 
 ## 考慮事項（ソフト制約 — できるだけ守る）
 1. **連続シフトの推奨**: 同日に複数枠入る場合、できるだけ長い連続枠にする（例: \u2461\u2462\u2463の3連続が理想）。来てもらったらまとめて連続で入ってもらう方が交通費・通勤負担の観点で望ましい

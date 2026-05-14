@@ -105,8 +105,6 @@ export default function SchedulePage() {
     const rows = days.map((date) => {
       const dow = getDayOfWeek(date);
       const d = parseInt(date.split("-")[2]);
-      const isTuesday = new Date(date).getDay() === 2;
-      if (isTuesday) return [`${d}`, dow, ...SHIFT_TYPES.map(() => "定休日")];
       const getStaff = (type: string) =>
         shifts.filter((s) => s.date === date && s.shift_type === type)
           .map((s) => `${s.staff_name}${s.is_owner ? "(Owner)" : ""}`)
@@ -222,21 +220,10 @@ export default function SchedulePage() {
               {days.map((date) => {
                 const dow = getDayOfWeek(date);
                 const weekend = isWeekend(date);
-                const isTuesday = new Date(date).getDay() === 2;
                 const isSunday = new Date(date).getDay() === 0;
                 const dayShifts = shiftsByDate.get(date) || [];
                 const d = parseInt(date.split("-")[2]);
-
-                if (isTuesday) {
-                  return (
-                    <tr key={date} className="table-row-closed">
-                      <td className="px-3 py-2 whitespace-nowrap text-[11px] text-gray-300">{d}({dow})</td>
-                      <td colSpan={slotCount} className="px-3 py-2 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
-                    </tr>
-                  );
-                }
-
-                return (
+return (
                   <tr key={date} className={weekend ? "table-row-weekend" : "table-row"}>
                     <td className="px-3 py-2 whitespace-nowrap text-[11px]" style={isSunday ? { color: "#d4766a" } : weekend ? { color: "#c9a84c", fontWeight: 600 } : { color: "#888" }}>
                       {d}({dow})

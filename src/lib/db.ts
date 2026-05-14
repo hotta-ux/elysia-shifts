@@ -84,7 +84,7 @@ async function initDb(db: Client) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       weekday_staff_count INTEGER DEFAULT 2,
       weekend_staff_count INTEGER DEFAULT 3,
-      closed_day INTEGER DEFAULT 2,
+      closed_day INTEGER DEFAULT -1,
       updated_at TEXT DEFAULT (datetime('now'))
     )
   `);
@@ -145,8 +145,10 @@ async function initDb(db: Client) {
   // Insert default settings if none exist
   const settings = await db.execute('SELECT COUNT(*) as cnt FROM shift_settings');
   if ((settings.rows[0].cnt as number) === 0) {
-    await db.execute('INSERT INTO shift_settings (weekday_staff_count, weekend_staff_count) VALUES (2, 3)');
+    await db.execute('INSERT INTO shift_settings (weekday_staff_count, weekend_staff_count, closed_day) VALUES (2, 3, -1)');
   }
+  // Migration: clear legacy closed_day (火曜) — store now open every day
+  await db.execute('UPDATE shift_settings SET closed_day = -1 WHERE closed_day = 2');
 
   // Insert 堀田 as owner if not exists
   const owner = await db.execute("SELECT COUNT(*) as cnt FROM staff WHERE is_owner = 1");

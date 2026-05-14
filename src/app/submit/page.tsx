@@ -28,9 +28,6 @@ function isWeekend(dateStr: string) {
   return day === 0 || day === 6;
 }
 
-function isTuesday(dateStr: string) {
-  return new Date(dateStr).getDay() === 2;
-}
 
 export default function SubmitPage() {
   const now = new Date();
@@ -260,20 +257,9 @@ export default function SubmitPage() {
             {days.map((date) => {
               const dow = getDayOfWeek(date);
               const weekend = isWeekend(date);
-              const tuesday = isTuesday(date);
               const d = parseInt(date.split("-")[2]);
               const isSunday = new Date(date).getDay() === 0;
-
-              if (tuesday) {
-                return (
-                  <tr key={date} className="table-row-closed">
-                    <td className="px-3 py-1.5 text-[11px] text-gray-300">{d}<span className="text-gray-300 ml-0.5">({dow})</span></td>
-                    <td colSpan={slotCount} className="py-1.5 text-center text-[10px] text-gray-300 tracking-widest">CLOSED</td>
-                  </tr>
-                );
-              }
-
-              return (
+return (
                 <tr key={date} className={weekend ? "table-row-weekend" : "table-row"}>
                   <td className="px-3 py-1 text-[11px] whitespace-nowrap" style={isSunday ? { color: "#d4766a" } : weekend ? { color: "#c9a84c", fontWeight: 600 } : { color: "#888" }}>
                     {d}<span className="ml-0.5">({dow})</span>
