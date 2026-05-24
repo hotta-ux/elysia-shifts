@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 ${staffInfo}
 
 ## 重要ルール（ハード制約 — 必ず守る）
-1. 堀田はオーナーなので毎日必ずいずれかのシフトに入れる（1日1枠以上）。高培勛はオーナーだが毎日出勤の制約はない
+1. **堀田は全日・全枠に必ず入れる**（オーナーのため毎日朝から閉店まで全シフトに必ずアサインする）。高培勛はオーナーだが毎日出勤の制約はない
 2. **【絶対】「出勤可能」リストに名前がないスタッフは絶対にアサインしない**。シフト希望を提出していない、もしくは「不可」または未入力の枠には絶対に入れないこと。堀田のみ毎日出勤の制約で例外的に常に候補となる
 3. 各スタッフの週上限・連勤上限を守る
 4. 各枠の必要人数を満たす
@@ -194,6 +194,18 @@ ${scheduleInfo}
       rejected.push({ ...s, reason: avail ? `availability=${avail}` : 'no_request' });
       return false;
     });
+
+    // Force 堀田 into every (date, slot) — guaranteed full coverage
+    if (hottaId !== undefined) {
+      const have = new Set(validated.filter(s => s.staff_id === hottaId).map(s => `${s.date}-${s.shift_type}`));
+      for (const date of days) {
+        for (const key of slotKeys) {
+          if (!have.has(`${date}-${key}`)) {
+            validated.push({ staff_id: hottaId, date, shift_type: key });
+          }
+        }
+      }
+    }
 
     // Save shifts to DB (only validated entries)
     const stmts: { sql: string; args: (string | number)[] }[] = [

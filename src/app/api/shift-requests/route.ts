@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // is treated as 'available'. Explicit ✕ submissions are preserved.
   if (month) {
     const hottaResult = await db.execute("SELECT id, name FROM staff WHERE name = '堀田' LIMIT 1");
-    const hotta = hottaResult.rows[0] as { id: number; name: string } | undefined;
+    const hotta = hottaResult.rows[0] as unknown as { id: number; name: string } | undefined;
     if (hotta) {
       const explicit = new Set(
         rows
