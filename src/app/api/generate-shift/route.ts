@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
   const year = parseInt(yearStr);
   const mon = parseInt(monthStr);
   const days = getDaysInMonth(year, mon);
-  const shiftConfig = getShiftTypes(year, mon);
+  const shiftConfigAll = getShiftTypes(year, mon);
+  // Break slots are not assigned to anyone; exclude from AI scheduling.
+  const shiftConfig = shiftConfigAll.filter(s => !s.isBreak);
   const SHIFT_LABELS: Record<string, string> = Object.fromEntries(shiftConfig.map(s => [s.key, `${s.label}(${s.time})`]));
   const slotKeys = shiftConfig.map(s => s.key);
   const slotLabelsJoined = shiftConfig.map(s => `${s.label}(${s.time})`).join(', ');

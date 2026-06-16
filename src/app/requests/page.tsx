@@ -184,7 +184,9 @@ export default function RequestsPage() {
                   <tr>
                     <th className="px-2 py-2 text-left text-[11px] font-medium text-gray-500 tracking-wider">日付</th>
                     {SHIFT_TYPES.map((st) => (
-                      <th key={st.key} className="px-2 py-2 text-center text-[11px] font-semibold tracking-wide" style={{ color: "#b8960c" }}>{st.label}</th>
+                      <th key={st.key} className="px-2 py-2 text-center text-[11px] font-semibold tracking-wide" style={{ color: st.isBreak ? "#bbb" : "#b8960c" }}>
+                        {st.label}{st.isBreak ? <span className="block text-[8px] text-gray-400 font-normal">休憩</span> : null}
+                      </th>
                     ))}
                   </tr>
                 </thead>
@@ -200,6 +202,13 @@ return (
                           {d}({dow})
                         </td>
                         {SHIFT_TYPES.map((st) => {
+                          if (st.isBreak) {
+                            return (
+                              <td key={st.key} className="px-2 py-1 text-center">
+                                <div className="w-8 h-6 mx-auto rounded-md flex items-center justify-center text-[9px] text-gray-400" style={{ background: "#ececea" }}>休</div>
+                              </td>
+                            );
+                          }
                           const key = `${date}-${st.key}`;
                           const avail = requests.get(key) || "unavailable";
                           return (
@@ -231,7 +240,9 @@ return (
               <tr>
                 <th className="px-2 py-2 text-left text-[11px] font-medium text-gray-500 tracking-wider">日付</th>
                 {SHIFT_TYPES.map((st) => (
-                  <th key={st.key} className="px-2 py-2 text-left text-[11px] font-semibold tracking-wide" style={{ color: "#b8960c" }}>{st.label}</th>
+                  <th key={st.key} className="px-2 py-2 text-left text-[11px] font-semibold tracking-wide" style={{ color: st.isBreak ? "#bbb" : "#b8960c" }}>
+                    {st.label}{st.isBreak ? <span className="block text-[8px] text-gray-400 font-normal">休憩</span> : null}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -245,8 +256,10 @@ return (
                       {d}({dow})
                     </td>
                     {shifts.map((st) => (
-                      <td key={st.key} className="px-2 py-1">
-                        {st.staff.length > 0
+                      <td key={st.key} className="px-2 py-1" style={st.isBreak ? { background: "#f5f5f3" } : undefined}>
+                        {st.isBreak
+                          ? <span className="text-[10px] text-gray-300">休憩</span>
+                          : st.staff.length > 0
                           ? st.staff.map((s) => (
                               <span key={s.name} className={`badge mr-1 mb-0.5 ${s.availability === "available" ? "badge-gold" : "badge-muted"}`}>
                                 {s.name}

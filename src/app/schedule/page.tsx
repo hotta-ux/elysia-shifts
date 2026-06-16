@@ -209,9 +209,9 @@ export default function SchedulePage() {
               <tr>
                 <th className="px-3 py-3 text-left text-[11px] font-medium text-gray-500 tracking-wider w-20">日付</th>
                 {SHIFT_TYPES.map((st) => (
-                  <th key={st.key} className="px-3 py-3 text-left text-[11px] font-semibold tracking-wide" style={{ color: "#b8960c" }}>
+                  <th key={st.key} className="px-3 py-3 text-left text-[11px] font-semibold tracking-wide" style={{ color: st.isBreak ? "#bbb" : "#b8960c" }}>
                     <span className="text-sm">{st.label}</span>
-                    <span className="text-gray-400 text-[10px] ml-1 font-normal">{st.time}</span>
+                    <span className="text-gray-400 text-[10px] ml-1 font-normal">{st.isBreak ? "休憩" : st.time}</span>
                   </th>
                 ))}
               </tr>
@@ -229,6 +229,13 @@ return (
                       {d}({dow})
                     </td>
                     {SHIFT_TYPES.map((st) => {
+                      if (st.isBreak) {
+                        return (
+                          <td key={st.key} className="px-3 py-2" style={{ background: "#f5f5f3" }}>
+                            <span className="text-[10px] text-gray-300">休憩</span>
+                          </td>
+                        );
+                      }
                       const staffInShift = dayShifts.filter((s) => s.shift_type === st.key);
                       return (
                         <td key={st.key} className="px-3 py-2">

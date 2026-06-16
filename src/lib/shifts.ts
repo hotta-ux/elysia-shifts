@@ -3,7 +3,7 @@
  * Cutover: from 2026-06 onwards, new 6-slot schedule with 9:30 open / 23:30 close.
  */
 
-export type ShiftType = { key: string; label: string; time: string };
+export type ShiftType = { key: string; label: string; time: string; isBreak?: boolean };
 
 const OLD_SLOTS: ShiftType[] = [
   { key: "slot1", label: "①", time: "8:00-11:00" },
@@ -20,7 +20,7 @@ const NEW_SLOTS: ShiftType[] = [
   { key: "slot0", label: "①", time: "8:00-9:30" },
   { key: "slot1", label: "②", time: "9:30-12:30" },
   { key: "slot2", label: "③", time: "12:30-15:30" },
-  { key: "slot3", label: "④", time: "15:30-18:30" },
+  { key: "slot3", label: "④", time: "15:30-18:30", isBreak: true },
   { key: "slot4", label: "⑤", time: "18:30-21:00" },
   { key: "slot5", label: "⑥", time: "21:00-23:30" },
 ];

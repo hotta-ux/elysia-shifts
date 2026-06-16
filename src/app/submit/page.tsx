@@ -108,6 +108,7 @@ export default function SubmitPage() {
     if (defaultAvail === "available") {
       for (const date of days) {
         for (const st of SHIFT_TYPES) {
+          if (st.isBreak) continue;
           const key = `${date}-${st.key}`;
           const availability = requests.get(key) || defaultAvail;
           requestArray.push({ staff_id: selectedStaff, date, shift_type: st.key, availability });
@@ -260,9 +261,9 @@ export default function SubmitPage() {
             <tr>
               <th className="px-3 py-2.5 text-left text-[11px] font-medium text-gray-500 tracking-wider w-16">日付</th>
               {SHIFT_TYPES.map((st) => (
-                <th key={st.key} className="px-1 py-2.5 text-center text-[11px] font-semibold tracking-wide" style={{ color: "#b8960c" }}>
+                <th key={st.key} className="px-1 py-2.5 text-center text-[11px] font-semibold tracking-wide" style={{ color: st.isBreak ? "#bbb" : "#b8960c" }}>
                   <div className="leading-none">{st.label}</div>
-                  <div className="text-[8px] text-gray-400 font-normal mt-0.5">{st.time}</div>
+                  <div className="text-[8px] text-gray-400 font-normal mt-0.5">{st.isBreak ? "休憩" : st.time}</div>
                 </th>
               ))}
             </tr>
@@ -279,6 +280,13 @@ return (
                     {d}<span className="ml-0.5">({dow})</span>
                   </td>
                   {SHIFT_TYPES.map((st) => {
+                    if (st.isBreak) {
+                      return (
+                        <td key={st.key} className="px-1 py-1 text-center">
+                          <div className="w-8 h-6 mx-auto rounded-md flex items-center justify-center text-[9px] text-gray-400" style={{ background: "#ececea" }}>休</div>
+                        </td>
+                      );
+                    }
                     const key = `${date}-${st.key}`;
                     const avail = requests.get(key) || defaultAvail;
                     return (
