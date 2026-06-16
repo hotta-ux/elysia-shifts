@@ -202,17 +202,10 @@ return (
                           {d}({dow})
                         </td>
                         {SHIFT_TYPES.map((st) => {
-                          if (st.isBreak) {
-                            return (
-                              <td key={st.key} className="px-2 py-1 text-center">
-                                <div className="w-8 h-6 mx-auto rounded-md flex items-center justify-center text-[9px] text-gray-400" style={{ background: "#ececea" }}>休</div>
-                              </td>
-                            );
-                          }
                           const key = `${date}-${st.key}`;
                           const avail = requests.get(key) || "unavailable";
                           return (
-                            <td key={st.key} className="px-2 py-1 text-center">
+                            <td key={st.key} className="px-2 py-1 text-center" style={st.isBreak ? { background: "#f5f5f3" } : undefined}>
                               <button onClick={() => toggleAvailability(date, st.key)} className="w-8 h-6 rounded-md text-[11px] font-bold transition-all duration-150 active:scale-90" style={getAvailStyle(avail)}>
                                 {getAvailLabel(avail)}
                               </button>

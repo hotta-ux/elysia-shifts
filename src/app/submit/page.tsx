@@ -108,9 +108,9 @@ export default function SubmitPage() {
     if (defaultAvail === "available") {
       for (const date of days) {
         for (const st of SHIFT_TYPES) {
-          if (st.isBreak) continue;
           const key = `${date}-${st.key}`;
-          const availability = requests.get(key) || defaultAvail;
+          // Break slots default to unavailable for 堀田 unless explicitly toggled
+          const availability = requests.get(key) || (st.isBreak ? "unavailable" : defaultAvail);
           requestArray.push({ staff_id: selectedStaff, date, shift_type: st.key, availability });
         }
       }
@@ -280,17 +280,10 @@ return (
                     {d}<span className="ml-0.5">({dow})</span>
                   </td>
                   {SHIFT_TYPES.map((st) => {
-                    if (st.isBreak) {
-                      return (
-                        <td key={st.key} className="px-1 py-1 text-center">
-                          <div className="w-8 h-6 mx-auto rounded-md flex items-center justify-center text-[9px] text-gray-400" style={{ background: "#ececea" }}>休</div>
-                        </td>
-                      );
-                    }
                     const key = `${date}-${st.key}`;
-                    const avail = requests.get(key) || defaultAvail;
+                    const avail = requests.get(key) || (st.isBreak ? "unavailable" : defaultAvail);
                     return (
-                      <td key={st.key} className="px-1 py-1 text-center">
+                      <td key={st.key} className="px-1 py-1 text-center" style={st.isBreak ? { background: "#f5f5f3" } : undefined}>
                         <button
                           onClick={() => toggleAvailability(date, st.key)}
                           className="w-8 h-6 rounded-md text-[11px] font-bold transition-all duration-150 active:scale-90"
