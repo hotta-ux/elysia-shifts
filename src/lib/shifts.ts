@@ -13,16 +13,13 @@ const OLD_SLOTS: ShiftType[] = [
   { key: "slot5", label: "⑤", time: "20:00-23:00" },
 ];
 
-// Note: slot0 was added later for the 8:00-9:30 prep slot.
-// Keys slot1..slot5 still map to the original time ranges (9:30-12:30, etc.)
-// to preserve existing shift_requests data. Labels are reassigned visually.
+// Slot keys are namespaced ("slotA".."slotD") so previously-submitted
+// availability rows keyed as slot0..slot5 don't collide with the new times.
 const NEW_SLOTS: ShiftType[] = [
-  { key: "slot0", label: "①", time: "8:00-9:30" },
-  { key: "slot1", label: "②", time: "9:30-12:30" },
-  { key: "slot2", label: "③", time: "12:30-15:30" },
-  { key: "slot3", label: "④", time: "15:30-18:30", isBreak: true },
-  { key: "slot4", label: "⑤", time: "18:30-21:00" },
-  { key: "slot5", label: "⑥", time: "21:00-23:30" },
+  { key: "slotA", label: "①", time: "9:00-12:00" },
+  { key: "slotB", label: "②", time: "12:00-15:00" },
+  { key: "slotC", label: "③", time: "15:00-17:00" },
+  { key: "slotD", label: "④", time: "20:00-23:00" },
 ];
 
 /**
