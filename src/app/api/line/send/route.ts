@@ -4,7 +4,7 @@ import { pushMessage } from '@/lib/line';
 /**
  * Cron endpoint: sends the monthly shift reminder to each LINE_RECIPIENT_IDS entry.
  *
- * Called by Vercel Cron on the 10th and 23rd of every month.
+ * Called by Vercel Cron on the 10th and 17th of every month.
  * The day-of-month is used to pick which of two message templates to send.
  *
  * Protection: Vercel Cron adds `Authorization: Bearer <CRON_SECRET>`.
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const submitUrl = 'https://elysia-shifts.vercel.app/submit';
 
   const text =
-    jstDay === 23
+    jstDay === 17
       ? `【シフト希望リマインド】\n${targetYear}年${targetMonth}月分のシフト希望、まだの方は今月末までに提出をお願いします🙏\n\n▼ 提出はこちら\n${submitUrl}`
       : `【シフト希望募集】\n${targetYear}年${targetMonth}月分のシフト希望を募集します！\n下記のリンクから ○（出勤可） / △（どちらでも） / ✕（不可）を入力して送信してください。\n\n▼ 提出はこちら\n${submitUrl}\n\n締切は今月末までにお願いします🙌`;
 
