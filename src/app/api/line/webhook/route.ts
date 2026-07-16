@@ -36,12 +36,17 @@ export async function POST(req: NextRequest) {
       console.log(`[LINE webhook] event=${ev.type} source=${kind} id=${id}`);
 
       if (ev.type === 'message' && ev.replyToken && ev.message?.type === 'text') {
-        const text = ev.message.text?.trim() ?? '';
-        // Reply with the current source ID (helps register groups)
-        if (text === 'id' || text === 'ID') {
-          await replyMessage(ev.replyToken, [
-            { type: 'text', text: `このトークの ID:\n${id}\n(type: ${kind})` },
-          ]);
+        const text = (ev.message.text ?? '').trim().toLowerCase();
+        // Any of these keywords triggers an ID reply.
+        if (['id', 'アイディー', 'あいでぃー', 'groupid', 'グループid'].includes(text)) {
+          try {
+            await replyMessage(ev.replyToken, [
+              { type: 'text', text: `このトークの ID:\n${id}\n(type: ${kind})` },
+            ]);
+            console.log(`[LINE webhook] replied ID ${id} for ${kind}`);
+          } catch (e) {
+            console.error(`[LINE webhook] reply failed:`, e);
+          }
         }
       }
 
