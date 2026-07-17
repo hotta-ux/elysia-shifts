@@ -44,11 +44,11 @@ export async function GET(req: NextRequest) {
 
   let text: string;
   if (jstDay === 19) {
-    text = `【厳守】${targetYear}年${targetMonth}月分シフト希望\n\n17日の提出期限を過ぎています。\n未提出の方は本日中に必ず提出してください。\n以降の提出は反映できません🙏\n\n▼ 提出はこちら\n${submitUrl}`;
+    text = `【厳守】${targetYear}年${targetMonth}月分シフト希望\n\n17日の提出期限を過ぎています。\n未提出の方は本日中に必ず提出してください🙏\n※これ以降の提出も一応反映はしますが、遅れないようご協力お願いします。\n\n▼ 提出はこちら\n${submitUrl}`;
   } else if (jstDay === 17) {
     text = `【本日締切】${targetYear}年${targetMonth}月分シフト希望\n\nシフト希望の提出期限は本日17日までです。\nまだの方は本日中に提出をお願いします🙏\n\n▼ 提出はこちら\n${submitUrl}`;
   } else {
-    text = `【シフト希望募集】${targetYear}年${targetMonth}月分\n\n下記のリンクから ○（出勤可） / △（どちらでも） / ✕（不可）を入力して送信してください。\n\n▼ 提出はこちら\n${submitUrl}\n\n締切は 17日 まで。19日以降は反映できませんのでご注意ください🙌`;
+    text = `【シフト希望募集】${targetYear}年${targetMonth}月分\n\n下記のリンクから ○（出勤可） / △（どちらでも） / ✕（不可）を入力して送信してください。\n\n▼ 提出はこちら\n${submitUrl}\n\n締切は 17日 まで。遅れないようお願いします🙌`;
   }
 
   const results: { to: string; ok: boolean; error?: string }[] = [];
