@@ -4,7 +4,7 @@ import { pushMessage } from '@/lib/line';
 /**
  * Cron endpoint: sends the monthly shift reminder to each LINE_RECIPIENT_IDS entry.
  *
- * Called by Vercel Cron on the 10th and 17th of every month.
+ * Called by Vercel Cron on the 10th (募集開始), 17th (期限当日), and 19th (期限後) of every month.
  * The day-of-month is used to pick which of two message templates to send.
  *
  * Protection: Vercel Cron adds `Authorization: Bearer <CRON_SECRET>`.
@@ -42,10 +42,14 @@ export async function GET(req: NextRequest) {
 
   const submitUrl = 'https://elysia-shifts.vercel.app/submit';
 
-  const text =
-    jstDay === 17
-      ? `【シフト希望リマインド】\n${targetYear}年${targetMonth}月分のシフト希望、まだの方は今月末までに提出をお願いします🙏\n\n▼ 提出はこちら\n${submitUrl}`
-      : `【シフト希望募集】\n${targetYear}年${targetMonth}月分のシフト希望を募集します！\n下記のリンクから ○（出勤可） / △（どちらでも） / ✕（不可）を入力して送信してください。\n\n▼ 提出はこちら\n${submitUrl}\n\n締切は今月末までにお願いします🙌`;
+  let text: string;
+  if (jstDay === 19) {
+    text = `【厳守】${targetYear}年${targetMonth}月分シフト希望\n\n17日の提出期限を過ぎています。\n未提出の方は本日中に必ず提出してください。\n以降の提出は反映できません🙏\n\n▼ 提出はこちら\n${submitUrl}`;
+  } else if (jstDay === 17) {
+    text = `【本日締切】${targetYear}年${targetMonth}月分シフト希望\n\nシフト希望の提出期限は本日17日までです。\nまだの方は本日中に提出をお願いします🙏\n\n▼ 提出はこちら\n${submitUrl}`;
+  } else {
+    text = `【シフト希望募集】${targetYear}年${targetMonth}月分\n\n下記のリンクから ○（出勤可） / △（どちらでも） / ✕（不可）を入力して送信してください。\n\n▼ 提出はこちら\n${submitUrl}\n\n締切は 17日 まで。19日以降は反映できませんのでご注意ください🙌`;
+  }
 
   const results: { to: string; ok: boolean; error?: string }[] = [];
   for (const to of ids) {
