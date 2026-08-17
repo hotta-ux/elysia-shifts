@@ -135,12 +135,13 @@ ${scheduleInfo}
 
 ## 出力形式（重要：トークン数を抑えるため圧縮形式で出力）
 以下のJSON形式で出力してください。JSONのみを出力し、他のテキストは含めないでください。
-"shifts" は [staff_id, "YYYY-MM-DD", "slotN"] のタプル配列で出力すること。
+"shifts" は [staff_id, "YYYY-MM-DD", "スロットキー"] のタプル配列で出力すること。
+**スロットキーは必ず ${JSON.stringify(slotKeys)} のいずれかを使うこと**（他のキーは絶対に使わない）。
 
 {
   "shifts": [
-    [1, "2026-05-01", "slot1"],
-    [2, "2026-05-01", "slot2"]
+    [1, "${month}-01", "${slotKeys[0]}"],
+    [2, "${month}-01", "${slotKeys[1] ?? slotKeys[0]}"]
   ],
   "notes": "編成の判断理由やメモ（200字以内）"
 }`;
@@ -189,7 +190,13 @@ ${scheduleInfo}
     const hottaStaff = staff.find(s => s.is_owner && s.name === '堀田');
     const hottaId = hottaStaff?.id;
     const rejected: { staff_id: number; date: string; shift_type: string; reason: string }[] = [];
+    const validSlotKeys = new Set(slotKeys);
     const validated = normalized.filter(s => {
+      // Drop shifts with slot keys that don't exist in this month's config.
+      if (!validSlotKeys.has(s.shift_type)) {
+        rejected.push({ ...s, reason: `invalid_slot_key=${s.shift_type}` });
+        return false;
+      }
       if (s.staff_id === hottaId) return true;
       const avail = requestMap.get(`${s.staff_id}-${s.date}-${s.shift_type}`);
       if (avail === 'available' || avail === 'either') return true;
