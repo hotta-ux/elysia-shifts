@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         const key = `${s.id}-${date}-${st}`;
         const avail = requestMap.get(key);
         // Only those who explicitly chose 'available' or 'either'.
-        // Owner 堀田 is always available (daily attendance constraint).
+        // Owner 堀田 is always considered a candidate but should be used sparingly (see soft constraints).
         // Absence of submission is treated as unavailable.
         return (s.is_owner && s.name === '堀田') || avail === 'available' || avail === 'either';
       }).map(s => s.name).join(', ');
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 ${staffInfo}
 
 ## 重要ルール（ハード制約 — 必ず守る）
-1. **堀田は全日・全枠に必ず入れる**（オーナーのため毎日朝から閉店まで全シフトに必ずアサインする）。高培勛はオーナーだが毎日出勤の制約はない
+1. **堀田はできるだけ休ませる**。必要な人数を他のスタッフで満たせる場合、堀田はアサインしない。他のスタッフだけで人数が足りない枠のみ、最終手段として堀田を入れる。高培勛も同様に毎日出勤の制約はない
 2. **【絶対】「出勤可能」リストに名前がないスタッフは絶対にアサインしない**。シフト希望を提出していない、もしくは「不可」または未入力の枠には絶対に入れないこと。堀田のみ毎日出勤の制約で例外的に常に候補となる
 3. 各スタッフの週上限・連勤上限を守る
 4. 各枠の必要人数を満たす
@@ -125,7 +125,7 @@ ${staffInfo}
 6. スキルバランス（全員新人にしない）
 7. 勤務日数を公平に配分
 8. 希望シフトをできるだけ尊重
-9. 堀田は最も早い枠（早番）に入ることが多いが、バランスも考慮
+9. 堀田は原則休みにする。山田英照が出勤可の枠では「山田＋他のスタッフ（堀田以外）」で組み、堀田は入れない
 10. 最も遅い枠（深夜枠）にはカクテルスキルが高い人を優先配置
 11. ロースト・外国語・清掃などの特殊スキルもバランスよく分散
 12. 体力配慮：同じスタッフを連日「最終枠（遅番）→翌日最初の枠（早番）」のような短間隔シフトに入れない
@@ -196,18 +196,6 @@ ${scheduleInfo}
       rejected.push({ ...s, reason: avail ? `availability=${avail}` : 'no_request' });
       return false;
     });
-
-    // Force 堀田 into every (date, slot) — guaranteed full coverage
-    if (hottaId !== undefined) {
-      const have = new Set(validated.filter(s => s.staff_id === hottaId).map(s => `${s.date}-${s.shift_type}`));
-      for (const date of days) {
-        for (const key of slotKeys) {
-          if (!have.has(`${date}-${key}`)) {
-            validated.push({ staff_id: hottaId, date, shift_type: key });
-          }
-        }
-      }
-    }
 
     // Save shifts to DB (only validated entries)
     const stmts: { sql: string; args: (string | number)[] }[] = [
