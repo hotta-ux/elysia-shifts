@@ -28,10 +28,11 @@ function getDayOfWeek(dateStr: string): string {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { month, apiKey } = body;
+  const { month } = body;
+  const apiKey = process.env.ANTHROPIC_API_KEY || body.apiKey;
 
   if (!apiKey) {
-    return NextResponse.json({ error: 'Claude APIキーが必要です' }, { status: 400 });
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY が設定されていません' }, { status: 500 });
   }
 
   const db = await getDb();

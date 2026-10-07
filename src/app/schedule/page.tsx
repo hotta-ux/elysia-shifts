@@ -40,7 +40,6 @@ export default function SchedulePage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
-  const [apiKey, setApiKey] = useState("");
   const [generating, setGenerating] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -57,25 +56,14 @@ export default function SchedulePage() {
 
   useEffect(() => { fetchShifts(); }, [fetchShifts]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("claude_api_key");
-    if (saved) setApiKey(saved);
-  }, []);
-
-  const saveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem("claude_api_key", key);
-  };
-
   const generateShift = async () => {
-    if (!apiKey) { setError("Claude APIキーを入力してください"); return; }
     setGenerating(true);
     setError(""); setNotes("");
     try {
       const res = await fetch("/api/generate-shift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month: monthStr, apiKey }),
+        body: JSON.stringify({ month: monthStr }),
       });
       const text = await res.text();
       let data: { error?: string; notes?: string };
@@ -155,17 +143,7 @@ export default function SchedulePage() {
       </div>
 
       <div className="card p-6 space-y-4">
-        <div className="flex items-end gap-3 flex-wrap">
-          <div className="flex-1 min-w-[280px]">
-            <label className="block text-[11px] font-medium text-gray-500 mb-1.5 tracking-wide">Claude API Key</label>
-            <input
-              type="password" value={apiKey}
-              onChange={(e) => saveApiKey(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all"
-              style={{ borderColor: "#e8dcc8" }}
-              placeholder="sk-ant-..."
-            />
-          </div>
+        <div className="flex items-center gap-3 flex-wrap">
           <button onClick={generateShift} disabled={generating} className="btn-primary whitespace-nowrap">
             {generating ? (
               <span className="flex items-center gap-2">
